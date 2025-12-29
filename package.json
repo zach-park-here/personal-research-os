@@ -1,0 +1,35 @@
+{
+  "name": "personal-research-os",
+  "version": "0.1.0",
+  "description": "A task-first, trigger-based AI system that proactively gathers information",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "agents",
+    "mcp-server",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:agents\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:agents": "npm run dev --workspace=agents",
+    "dev:mcp": "npm run dev --workspace=mcp-server",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "clean": "npm run clean --workspaces && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "form-data": "^4.0.5",
+    "node-fetch": "^2.7.0"
+  }
+}

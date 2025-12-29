@@ -1,0 +1,28 @@
+{
+  "name": "@personal-research-os/mcp-server",
+  "version": "0.1.0",
+  "description": "Desktop MCP server for local file access",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@personal-research-os/shared": "*",
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "express": "^4.18.2",
+    "zod": "^3.22.4",
+    "glob": "^10.3.10",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.6",
+    "@types/pdf-parse": "^1.1.4",
+    "tsx": "^4.7.0",
+    "jest": "^29.7.0",
+    "typescript": "^5.3.3"
+  }
+}
