@@ -32,6 +32,7 @@ export interface Task {
   // Frontend-only fields for demo
   isResearchEligible?: boolean;
   researchStatus?: ResearchStatus;
+  taskType?: 'meeting_prep' | 'general_research'; // Type of research task
   assignedTo?: 'user' | 'ai'; // Who is responsible for this task
   isResearch?: boolean; // Whether this is a research task
   reasoning?: string; // AI reasoning for research tasks

@@ -1,4 +1,4 @@
-import { Inbox, Calendar, Grid3x3, CheckCircle2, Plus, Bell, BarChart3, ChevronDown, Palette, ChevronLeft } from 'lucide-react';
+import { Inbox, Calendar, Grid3x3, CheckCircle2, Plus, Bell, ChevronDown, Palette, ChevronLeft } from 'lucide-react';
 
 interface SidebarProps {
   onToggle: () => void;
@@ -8,30 +8,27 @@ interface SidebarProps {
 
 function Sidebar({ onToggle, onAddTask }: SidebarProps) {
   return (
-    <div className="w-[280px] bg-[#FAFAFA] border-r border-[#F0F0F0] flex flex-col h-full flex-shrink-0">
+    <div className="w-[280px] bg-[#FAFAFA] dark:bg-[#202123] border-r border-[#F0F0F0] dark:border-[#3A3A3C] flex flex-col h-full flex-shrink-0">
       {/* User Profile */}
-      <div className="px-4 py-3 border-b border-[#F0F0F0]">
+      <div className="px-4 py-3 border-b border-[#F0F0F0] dark:border-[#3A3A3C]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-medium">
-              PJ
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-200 to-pink-200 dark:from-purple-300 dark:to-pink-300 flex items-center justify-center">
+              <span className="text-xs font-semibold text-purple-700 dark:text-purple-900">ZP</span>
             </div>
-            <span className="text-sm font-medium text-[#202020]">Park Jeong-ho</span>
-            <ChevronDown className="w-4 h-4 text-[#888888]" />
+            <span className="text-sm font-medium text-[#202020] dark:text-[#ECECEC]">Zach Park</span>
+            <ChevronDown className="w-4 h-4 text-[#888888] dark:text-[#C5C7CA]" />
           </div>
           <div className="flex items-center gap-1">
-            <button className="p-1.5 hover:bg-[#F0F0F0] rounded transition-colors">
-              <Bell className="w-4 h-4 text-[#888888]" />
-            </button>
-            <button className="p-1.5 hover:bg-[#F0F0F0] rounded transition-colors">
-              <BarChart3 className="w-4 h-4 text-[#888888]" />
+            <button className="p-1.5 hover:bg-[#F0F0F0] dark:hover:bg-[#3A3A3C] rounded transition-colors">
+              <Bell className="w-4 h-4 text-[#888888] dark:text-[#C5C7CA]" />
             </button>
             <button
               onClick={onToggle}
-              className="p-1.5 hover:bg-[#F0F0F0] rounded transition-colors"
+              className="p-1.5 hover:bg-[#F0F0F0] dark:hover:bg-[#3A3A3C] rounded transition-colors"
               title="Hide sidebar"
             >
-              <ChevronLeft className="w-4 h-4 text-[#888888]" />
+              <ChevronLeft className="w-4 h-4 text-[#888888] dark:text-[#C5C7CA]" />
             </button>
           </div>
         </div>
@@ -41,7 +38,7 @@ function Sidebar({ onToggle, onAddTask }: SidebarProps) {
       <div className="px-3 py-3">
         <button
           onClick={onAddTask}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#DD4B39] hover:bg-white rounded-lg transition-colors font-medium"
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#DD4B39] dark:text-white hover:bg-white dark:hover:bg-[#3A3A3C] rounded-lg transition-colors font-medium"
         >
           <Plus className="w-5 h-5" />
           <span>Add task</span>
@@ -76,7 +73,7 @@ function NavItem({
       className={`
         w-full flex items-center justify-between px-3 py-2 text-sm
         transition-colors rounded-lg
-        ${active ? 'bg-[#FFEFEB] text-[#202020] font-medium' : 'text-[#202020] hover:bg-white'}
+        ${active ? 'bg-[#FFEFEB] dark:bg-[#10A37F]/20 text-[#202020] dark:text-[#ECECEC] font-medium' : 'text-[#202020] dark:text-[#ECECEC] hover:bg-white dark:hover:bg-[#3A3A3C]'}
       `}
     >
       <div className="flex items-center gap-2">
@@ -84,7 +81,7 @@ function NavItem({
         <span>{label}</span>
       </div>
       {count !== undefined && (
-        <span className="text-xs text-[#888888]">{count}</span>
+        <span className="text-xs text-[#888888] dark:text-[#C5C7CA]">{count}</span>
       )}
     </button>
   );

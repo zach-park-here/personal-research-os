@@ -12,6 +12,7 @@ import { BrowsingHistoryAggregatedRepository } from './browsing-history.reposito
 import { SearchFlowRepository } from './search-flow.repository';
 import { ResearchPlanRepository } from './research-plan.repository';
 import { ResearchResultRepository } from './research-result.repository';
+import { UserProfileRepository } from './user-profile.repository';
 
 /**
  * Get repository instances
@@ -28,6 +29,7 @@ export function getRepositories() {
     searchFlows: new SearchFlowRepository(db),
     researchPlans: new ResearchPlanRepository(db),
     researchResults: new ResearchResultRepository(db),
+    userProfiles: new UserProfileRepository(db),
     // Add more repositories as needed:
     // projects: new ProjectRepository(db),
     // calendarEvents: new CalendarEventRepository(db),

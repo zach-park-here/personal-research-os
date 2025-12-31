@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getRepositories } from '../db/repositories';
 import { requestResearchForTask } from '../services/research/orchestrator.service';
-import { isResearchTask } from '../services/research/classifier.service';
+import { isResearchTask, classifyTaskType } from '../services/research/classifier.service';
 
 export const tasksRouter = Router();
 
@@ -16,10 +16,66 @@ export const tasksRouter = Router();
 tasksRouter.get('/', async (req, res) => {
   try {
     const userId = req.query.userId as string; // In production, get from auth middleware
-    const { tasks } = getRepositories();
+    const repos = getRepositories();
+    const { tasks, researchResults, researchTasks } = repos;
 
     const taskList = await tasks.listByUser(userId);
-    res.json(taskList);
+
+    // Enrich tasks with research status and task type
+    const enrichedTasks = await Promise.all(
+      taskList.map(async (task) => {
+        const isEligible = isResearchTask(task);
+        let researchStatus: 'not_started' | 'executing' | 'completed' = 'not_started';
+        let taskType: 'meeting_prep' | 'general_research' | undefined = undefined;
+
+        if (isEligible) {
+          // Classify task type
+          const userProfile = await repos.userProfiles.getByUserId(task.userId).catch(() => null);
+          taskType = classifyTaskType(task, userProfile);
+
+          // First check if research is completed
+          const researchResult = await researchResults.getByTaskId(task.id).catch(() => null);
+          if (researchResult) {
+            researchStatus = 'completed';
+          } else {
+            // Check actual research tracking status from research_tasks table
+            const researchTracking = await researchTasks.getByTaskId(task.id).catch(() => null);
+            if (researchTracking) {
+              const status = researchTracking.researchStatus;
+              // Map detailed statuses to simplified ones for UI
+              if (status === 'completed') {
+                researchStatus = 'completed';
+              } else if (status === 'classifying' || status === 'planning' || status === 'executing') {
+                researchStatus = 'executing';
+              } else if (status === 'failed') {
+                researchStatus = 'not_started';
+              }
+            }
+          }
+        }
+
+        const enrichedTask = {
+          ...task,
+          isResearchEligible: isEligible,
+          researchStatus,
+          taskType,
+        };
+
+        // DEBUG: Log task type for research tasks
+        if (isEligible && taskType) {
+          console.log(`[TasksAPI] 📋 Task enrichment:`, {
+            id: task.id,
+            title: task.title,
+            taskType,
+            researchStatus,
+          });
+        }
+
+        return enrichedTask;
+      })
+    );
+
+    res.json(enrichedTasks);
   } catch (error) {
     console.error('Failed to fetch tasks:', error);
     res.status(500).json({ error: 'Failed to fetch tasks' });

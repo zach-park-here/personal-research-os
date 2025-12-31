@@ -42,6 +42,40 @@ export class ResearchTaskRepository extends BaseRepository {
   }
 
   /**
+   * Get research task by task ID
+   * Returns research tracking info for a task
+   */
+  async getByTaskId(taskId: string): Promise<{
+    id: string;
+    taskId: string;
+    isResearchEligible: boolean;
+    researchIntent: ResearchIntent | null;
+    researchStatus: ResearchStatus;
+  } | null> {
+    const { data, error } = await this.db
+      .from('research_tasks')
+      .select('id, task_id, is_research_eligible, research_intent, research_status')
+      .eq('task_id', taskId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to get research task: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      taskId: data.task_id,
+      isResearchEligible: data.is_research_eligible || false,
+      researchIntent: data.research_intent,
+      researchStatus: data.research_status || 'not_started',
+    };
+  }
+
+  /**
    * Get or create research task entry for tracking
    * Creates minimal entry if doesn't exist
    */

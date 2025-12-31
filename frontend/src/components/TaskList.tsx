@@ -1,6 +1,7 @@
-import { ChevronRight, ChevronDown, Sparkles, Search, Bot, User, ExternalLink } from 'lucide-react';
+import { ChevronRight, ChevronDown, Sparkles, Search, Bot, User, ExternalLink, Loader2, Trash2 } from 'lucide-react';
 import { Task } from '../types';
 import { useState, useEffect } from 'react';
+import { useResearch } from '../hooks/useResearch';
 
 interface TaskListProps {
   tasks: Task[];
@@ -8,12 +9,13 @@ interface TaskListProps {
   onSelectTask: (task: Task) => void;
   onShowSources?: (task: Task) => void;
   onSelectSubtask?: (task: Task) => void;
+  onDeleteTask?: (taskId: string) => void;
 }
 
-function TaskList({ tasks, selectedTaskId, onSelectTask, onShowSources, onSelectSubtask }: TaskListProps) {
+function TaskList({ tasks, selectedTaskId, onSelectTask, onShowSources, onSelectSubtask, onDeleteTask }: TaskListProps) {
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-12 text-[#888888]">
+      <div className="text-center py-12 text-[#888888] dark:text-[#C5C7CA]">
         <p className="text-sm">No tasks for today</p>
       </div>
     );
@@ -29,6 +31,7 @@ function TaskList({ tasks, selectedTaskId, onSelectTask, onShowSources, onSelect
           onClick={() => onSelectTask(task)}
           onShowSources={onShowSources}
           onSelectSubtask={onSelectSubtask}
+          onDeleteTask={onDeleteTask}
         />
       ))}
     </div>
@@ -41,6 +44,7 @@ interface TaskItemWithSubtasksProps {
   onClick: () => void;
   onShowSources?: (task: Task) => void;
   onSelectSubtask?: (task: Task) => void;
+  onDeleteTask?: (taskId: string) => void;
 }
 
 function TaskItemWithSubtasks({
@@ -49,16 +53,43 @@ function TaskItemWithSubtasks({
   onClick,
   onShowSources,
   onSelectSubtask,
+  onDeleteTask,
 }: TaskItemWithSubtasksProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded
   const [searchProgress, setSearchProgress] = useState<{ currentSource: string; progress: number } | null>(null);
   const [aiStatus, setAiStatus] = useState<string | null>(null);
   const [keywords, setKeywords] = useState<string[]>([]);
-  const hasSubtasks = task.subtasks && task.subtasks.length > 0;
 
-  // Separate AI and User tasks
-  const aiTasks = task.subtasks?.filter(st => st.assignedTo === 'ai') || [];
-  const userTasks = task.subtasks?.filter(st => st.assignedTo === 'user') || [];
+  // Get subtasks from backend research results
+  const { researchResult } = useResearch(task.id);
+  const subtasks = researchResult?.subtask_results?.map((subtaskResult) => ({
+    id: subtaskResult.subtask_id,
+    title: subtaskResult.subtask_title,
+    userId: 'demo-user',
+    description: '',
+    priority: 'medium' as const,
+    status: 'completed' as const,
+    tags: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isResearchEligible: true,
+    researchStatus: 'completed' as 'completed' | 'executing' | 'not_started',
+    parentId: task.id,
+    isResearch: true,
+    sources: subtaskResult.sources.map((source) => ({
+      title: source.title,
+      url: source.url,
+      description: source.snippet,
+      favicon: undefined,
+    })),
+    summarization: '', // subtask_results don't have content field
+  })) || [];
+
+  const hasSubtasks = subtasks && subtasks.length > 0;
+
+  // Separate AI and User tasks (for now all from backend are AI tasks)
+  const aiTasks = subtasks;
+  const userTasks: Task[] = [];
 
   // Find first AI task in progress
   const firstAiTaskInProgress = aiTasks.find(st => st.researchStatus === 'executing');
@@ -132,20 +163,21 @@ function TaskItemWithSubtasks({
         isExpanded={isExpanded}
         onToggleExpand={() => setIsExpanded(!isExpanded)}
         hasSubtasks={hasSubtasks}
+        onDeleteTask={onDeleteTask}
       />
 
       {/* AI Preparation Status */}
       {task.isResearchEligible && aiStatus && (
         <div className="ml-10 mb-2">
-          <div className="flex items-center gap-2 text-xs text-[#666666] mb-1.5">
+          <div className="flex items-center gap-2 text-xs text-[#666666] dark:text-[#C5C7CA] mb-1.5">
             <div className="flex gap-1">
-              <div className="w-1 h-1 bg-[#888888] rounded-full animate-bounce" />
+              <div className="w-1 h-1 bg-[#888888] dark:bg-[#C5C7CA] rounded-full animate-bounce" />
               <div
-                className="w-1 h-1 bg-[#888888] rounded-full animate-bounce"
+                className="w-1 h-1 bg-[#888888] dark:bg-[#C5C7CA] rounded-full animate-bounce"
                 style={{ animationDelay: '0.1s' }}
               />
               <div
-                className="w-1 h-1 bg-[#888888] rounded-full animate-bounce"
+                className="w-1 h-1 bg-[#888888] dark:bg-[#C5C7CA] rounded-full animate-bounce"
                 style={{ animationDelay: '0.2s' }}
               />
             </div>
@@ -158,7 +190,7 @@ function TaskItemWithSubtasks({
               {keywords.map((keyword, index) => (
                 <span
                   key={index}
-                  className="px-2 py-0.5 bg-[#F3F3F3] text-[10px] text-[#666666] rounded-full border border-[#E8E8E8]"
+                  className="px-2 py-0.5 bg-[#F3F3F3] dark:bg-[#2D2D2D] text-[10px] text-[#666666] dark:text-[#C5C7CA] rounded-full border border-[#E8E8E8] dark:border-[#3A3A3C]"
                 >
                   {keyword}
                 </span>
@@ -171,15 +203,15 @@ function TaskItemWithSubtasks({
       {/* Web Search Progress - Show below main task */}
       {task.isResearchEligible && searchProgress && !aiStatus && (
         <div className="ml-10 mb-2">
-          <div className="flex items-center gap-2 text-xs text-[#666666]">
+          <div className="flex items-center gap-2 text-xs text-[#666666] dark:text-[#C5C7CA]">
             <div className="flex gap-1">
-              <div className="w-1 h-1 bg-[#888888] rounded-full animate-bounce" />
+              <div className="w-1 h-1 bg-[#888888] dark:bg-[#C5C7CA] rounded-full animate-bounce" />
               <div
-                className="w-1 h-1 bg-[#888888] rounded-full animate-bounce"
+                className="w-1 h-1 bg-[#888888] dark:bg-[#C5C7CA] rounded-full animate-bounce"
                 style={{ animationDelay: '0.1s' }}
               />
               <div
-                className="w-1 h-1 bg-[#888888] rounded-full animate-bounce"
+                className="w-1 h-1 bg-[#888888] dark:bg-[#C5C7CA] rounded-full animate-bounce"
                 style={{ animationDelay: '0.2s' }}
               />
             </div>
@@ -192,7 +224,7 @@ function TaskItemWithSubtasks({
               {keywords.map((keyword, index) => (
                 <span
                   key={index}
-                  className="px-2 py-0.5 bg-[#F3F3F3] text-[10px] text-[#666666] rounded-full border border-[#E8E8E8]"
+                  className="px-2 py-0.5 bg-[#F3F3F3] dark:bg-[#2D2D2D] text-[10px] text-[#666666] dark:text-[#C5C7CA] rounded-full border border-[#E8E8E8] dark:border-[#3A3A3C]"
                 >
                   {keyword}
                 </span>
@@ -209,8 +241,8 @@ function TaskItemWithSubtasks({
           {aiTasks.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2 px-2">
-                <Bot className="w-4 h-4 text-blue-600" />
-                <h4 className="text-xs font-semibold text-[#888888] uppercase">AI Tasks</h4>
+                <Bot className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h4 className="text-xs font-semibold text-[#888888] dark:text-[#C5C7CA] uppercase">AI Tasks</h4>
               </div>
               <div className="space-y-1">
                 {aiTasks.map((subtask, idx) => {
@@ -233,8 +265,8 @@ function TaskItemWithSubtasks({
           {userTasks.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2 px-2">
-                <User className="w-4 h-4 text-[#DD4B39]" />
-                <h4 className="text-xs font-semibold text-[#888888] uppercase">Your Tasks</h4>
+                <User className="w-4 h-4 text-[#DD4B39] dark:text-[#10A37F]" />
+                <h4 className="text-xs font-semibold text-[#888888] dark:text-[#C5C7CA] uppercase">Your Tasks</h4>
               </div>
               <div className="space-y-1">
                 {userTasks.map((subtask) => (
@@ -264,6 +296,7 @@ interface TaskItemProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   isResearch?: boolean;
+  onDeleteTask?: (taskId: string) => void;
 }
 
 function TaskItem({
@@ -275,16 +308,26 @@ function TaskItem({
   isExpanded,
   onToggleExpand,
   isResearch = false,
+  onDeleteTask,
 }: TaskItemProps) {
   const researchStatus = task.researchStatus;
+
+  // Debug logging
+  console.log('[TaskItem]', task.title, {
+    isResearchEligible: task.isResearchEligible,
+    researchStatus,
+    isSubtask,
+    shouldShowResearchingBadge: task.isResearchEligible && !isSubtask && researchStatus !== 'completed' && researchStatus !== 'not_started',
+    shouldShowCompletedBadge: researchStatus === 'completed' && !isSubtask,
+  });
 
   return (
     <div
       className={`
         group flex items-start gap-2.5 px-2 py-2 rounded cursor-pointer
-        transition-colors
-        ${isSelected ? 'bg-[#FFEFEB]' : 'hover:bg-[#F9F9F9]'}
-        ${isSubtask ? 'text-[#666666]' : ''}
+        transition-all duration-200
+        ${isSelected ? 'bg-[#FFEFEB] dark:bg-[#10A37F]/20' : 'hover:bg-[#F9F9F9] dark:hover:bg-[#2D2D2D]'}
+        ${isSubtask ? 'text-[#666666] dark:text-[#C5C7CA]' : ''}
       `}
     >
       {/* Expand/Collapse for parent tasks with subtasks */}
@@ -297,9 +340,9 @@ function TaskItem({
           className="flex items-center justify-center w-4 h-4 flex-shrink-0 mt-0.5"
         >
           {isExpanded ? (
-            <ChevronDown className="w-3.5 h-3.5 text-[#666666]" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#666666] dark:text-[#C5C7CA]" />
           ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-[#666666]" />
+            <ChevronRight className="w-3.5 h-3.5 text-[#666666] dark:text-[#C5C7CA]" />
           )}
         </button>
       )}
@@ -318,8 +361,8 @@ function TaskItem({
           transition-all cursor-pointer
           ${
             task.status === 'completed'
-              ? 'bg-[#808080] border-[#808080]'
-              : 'border-[#D1D1D1] hover:border-[#808080]'
+              ? 'bg-[#808080] dark:bg-[#10A37F] border-[#808080] dark:border-[#10A37F]'
+              : 'border-[#D1D1D1] dark:border-[#3A3A3C] hover:border-[#808080] dark:hover:border-[#10A37F]'
           }
         `}
       >
@@ -342,10 +385,10 @@ function TaskItem({
           <span
             className={`text-sm ${
               task.status === 'completed'
-                ? 'line-through text-[#888888]'
+                ? 'line-through text-[#888888] dark:text-[#C5C7CA]'
                 : isSubtask
-                ? 'text-[#666666]'
-                : 'text-[#202020]'
+                ? 'text-[#666666] dark:text-[#C5C7CA]'
+                : 'text-[#202020] dark:text-[#ECECEC]'
             }`}
           >
             {task.title}
@@ -353,34 +396,48 @@ function TaskItem({
 
           {/* Search icon for research subtasks */}
           {isResearch && isSubtask && (
-            <Search className="w-3.5 h-3.5 text-[#888888]" />
+            <Search className="w-3.5 h-3.5 text-[#888888] dark:text-[#C5C7CA]" />
           )}
 
-          {/* Research Badge */}
+          {/* Research Badge - In Progress */}
           {task.isResearchEligible &&
             !isSubtask &&
             researchStatus !== 'completed' &&
             researchStatus !== 'not_started' && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#F3F3F3] text-[10px] text-[#666666] rounded">
-                <Sparkles className="w-2.5 h-2.5" />
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-[10px] text-blue-600 dark:text-blue-400 rounded-md font-medium border border-blue-200 dark:border-blue-800">
+                <Loader2 className="w-3 h-3 animate-spin" />
                 Researching
               </span>
             )}
 
-          {researchStatus === 'completed' && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-black text-[10px] text-white rounded">
-              <Sparkles className="w-2.5 h-2.5" />
+          {/* Research Badge - Completed (Minimal) */}
+          {researchStatus === 'completed' && !isSubtask && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 dark:bg-[#2D2D2D] text-[10px] text-gray-700 dark:text-[#C5C7CA] rounded border border-gray-200 dark:border-[#3A3A3C] font-medium">
               Completed
             </span>
           )}
         </div>
 
         {task.description && (
-          <p className="text-xs text-[#888888] mt-0.5 line-clamp-1">
+          <p className="text-xs text-[#888888] dark:text-[#C5C7CA] mt-0.5 line-clamp-1">
             {task.description}
           </p>
         )}
       </div>
+
+      {/* Delete button - appears on hover */}
+      {!isSubtask && onDeleteTask && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteTask(task.id);
+          }}
+          className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-all"
+          title="Delete task"
+        >
+          <Trash2 className="w-4 h-4 text-[#888888] dark:text-[#C5C7CA] hover:text-red-600 dark:hover:text-red-400" />
+        </button>
+      )}
     </div>
   );
 }
@@ -408,7 +465,7 @@ function SubtaskItem({ task, isInProgress, onShowSources, onSelectSubtask }: Sub
         className={`
           group flex items-start gap-2.5 px-2 py-2 rounded cursor-pointer
           transition-colors
-          ${isInProgress ? 'bg-blue-50 border border-blue-200' : 'hover:bg-[#F9F9F9]'}
+          ${isInProgress ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800' : 'hover:bg-[#F9F9F9] dark:hover:bg-[#2D2D2D]'}
         `}
       >
         {/* Expand/Collapse button for summarization */}
@@ -420,9 +477,9 @@ function SubtaskItem({ task, isInProgress, onShowSources, onSelectSubtask }: Sub
           className="flex items-center justify-center w-4 h-4 flex-shrink-0 mt-0.5"
         >
           {isExpanded ? (
-            <ChevronDown className="w-3.5 h-3.5 text-[#666666]" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#666666] dark:text-[#C5C7CA]" />
           ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-[#666666]" />
+            <ChevronRight className="w-3.5 h-3.5 text-[#666666] dark:text-[#C5C7CA]" />
           )}
         </button>
 
@@ -433,8 +490,8 @@ function SubtaskItem({ task, isInProgress, onShowSources, onSelectSubtask }: Sub
             transition-all cursor-pointer
             ${
               task.status === 'completed'
-                ? 'bg-[#808080] border-[#808080]'
-                : 'border-[#D1D1D1] hover:border-[#808080]'
+                ? 'bg-[#808080] dark:bg-[#10A37F] border-[#808080] dark:border-[#10A37F]'
+                : 'border-[#D1D1D1] dark:border-[#3A3A3C] hover:border-[#808080] dark:hover:border-[#10A37F]'
             }
           `}
         >
@@ -457,10 +514,10 @@ function SubtaskItem({ task, isInProgress, onShowSources, onSelectSubtask }: Sub
             <span
               className={`text-sm ${
                 task.status === 'completed'
-                  ? 'line-through text-[#888888]'
+                  ? 'line-through text-[#888888] dark:text-[#C5C7CA]'
                   : isInProgress
-                  ? 'text-blue-600 font-medium'
-                  : 'text-[#666666]'
+                  ? 'text-blue-600 dark:text-blue-400 font-medium'
+                  : 'text-[#666666] dark:text-[#C5C7CA]'
               }`}
             >
               {task.title}
@@ -468,13 +525,13 @@ function SubtaskItem({ task, isInProgress, onShowSources, onSelectSubtask }: Sub
 
             {/* Search icon for research tasks */}
             {task.isResearch && (
-              <Search className={`w-3.5 h-3.5 ${isInProgress ? 'text-blue-600' : 'text-[#888888]'}`} />
+              <Search className={`w-3.5 h-3.5 ${isInProgress ? 'text-blue-600 dark:text-blue-400' : 'text-[#888888] dark:text-[#C5C7CA]'}`} />
             )}
           </div>
 
           {/* Show "Researching..." text for in-progress tasks */}
           {isInProgress && task.status !== 'completed' && (
-            <p className="text-xs text-blue-600 mt-0.5">Researching...</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Researching...</p>
           )}
         </div>
       </div>
@@ -484,12 +541,12 @@ function SubtaskItem({ task, isInProgress, onShowSources, onSelectSubtask }: Sub
         <div className="ml-8 mt-1 mb-2">
           {/* Summarization */}
           {task.summarization && (
-            <div className="px-3 py-2 bg-[#F9F9F9] border border-[#E8E8E8] rounded-lg mb-2">
+            <div className="px-3 py-2 bg-[#F9F9F9] dark:bg-[#2D2D2D] border border-[#E8E8E8] dark:border-[#3A3A3C] rounded-lg mb-2">
               <div className="flex items-start gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#666666] mt-0.5 flex-shrink-0" />
+                <Sparkles className="w-3.5 h-3.5 text-[#666666] dark:text-[#C5C7CA] mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs font-semibold text-[#666666] mb-1">Summary</p>
-                  <p className="text-xs text-[#888888] leading-relaxed">{task.summarization}</p>
+                  <p className="text-xs font-semibold text-[#666666] dark:text-[#C5C7CA] mb-1">Summary</p>
+                  <p className="text-xs text-[#888888] dark:text-[#C5C7CA] leading-relaxed">{task.summarization}</p>
                 </div>
               </div>
             </div>
@@ -502,7 +559,7 @@ function SubtaskItem({ task, isInProgress, onShowSources, onSelectSubtask }: Sub
                 e.stopPropagation();
                 onShowSources?.(task);
               }}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#2D2D2D] rounded-lg transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span>View {task.sources.length} sources</span>

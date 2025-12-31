@@ -73,3 +73,6 @@ export type Project = z.infer<typeof ProjectSchema>;
 export type CalendarEvent = z.infer<typeof CalendarEventSchema>;
 export type BrowsingHistoryRaw = z.infer<typeof BrowsingHistoryRawSchema>;
 export type TriggerEvent = z.infer<typeof TriggerEventSchema>;
+
+// User Profile exports
+export * from './user-profile';

@@ -4,6 +4,10 @@
 
 import { Router } from 'express';
 import { requestResearchForTask, getResearchResults } from '../services/research/orchestrator.service';
+import { planWebResearch } from '../services/research/planner.service';
+import { classifyTaskType, extractMeetingContext } from '../services/research/classifier.service';
+import { getRepositories } from '../db/repositories';
+import { getTaskById } from '../db/repositories/task.repository';
 
 export const researchRouter = Router();
 
@@ -36,6 +40,86 @@ researchRouter.post('/request/:taskId', async (req, res) => {
     console.error('[API] Research request failed:', error);
     res.status(500).json({
       error: 'Research request failed',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/research/plan
+ *
+ * Generate research queries for a task title (without creating the task)
+ * Body: { userId: string, title: string, description?: string }
+ */
+researchRouter.post('/plan', async (req, res) => {
+  try {
+    const { userId, title, description } = req.body;
+
+    if (!userId || !title) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'userId and title are required',
+      });
+    }
+
+    console.log(`[API] Planning research for: "${title}"`);
+
+    // Create temporary task object for planning
+    const tempTask = {
+      id: 'temp',
+      userId,
+      title,
+      description: description || '',
+      status: 'pending' as const,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Get user profile for context
+    const repos = getRepositories();
+    const userProfile = await repos.userProfiles.getByUserId(userId).catch(() => null);
+
+    // Classify task type
+    const taskType = classifyTaskType(tempTask, userProfile);
+
+    // Extract meeting context if meeting prep
+    let meetingContext = undefined;
+    if (taskType === 'meeting_prep') {
+      meetingContext = extractMeetingContext(tempTask);
+
+      // DEMO: Override with Sam Altman
+      console.log('[API] DEMO MODE: Overriding with Sam Altman context');
+      meetingContext = {
+        prospectName: 'Sam Altman',
+        prospectTitle: 'CEO',
+        prospectCompany: 'OpenAI',
+        prospectEmail: 'sam@openai.com',
+        meetingDate: meetingContext?.meetingDate || 'this week',
+      };
+    }
+
+    // Generate research queries
+    const queries = await planWebResearch(
+      tempTask,
+      'general_summary',
+      taskType,
+      meetingContext
+    );
+
+    res.json({
+      taskType,
+      meetingContext,
+      queries: queries.map(q => ({
+        id: q.id,
+        title: q.title,
+        query: q.query,
+      })),
+    });
+
+  } catch (error: any) {
+    console.error('[API] Research planning failed:', error);
+    res.status(500).json({
+      error: 'Research planning failed',
       message: error.message,
     });
   }

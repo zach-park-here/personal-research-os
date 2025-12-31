@@ -6,10 +6,11 @@
  */
 
 import { getRepositories } from '../../db/repositories';
-import { isResearchTask } from './classifier.service';
+import { isResearchTask, classifyTaskType, extractMeetingContext } from './classifier.service';
 import { planWebResearch } from './planner.service';
 import { executeResearch } from './executor.service';
-import type { ResearchIntent, ResearchResult } from '@personal-research-os/shared/types/research';
+import type { ResearchIntent, ResearchResult, TaskType } from '@personal-research-os/shared/types/research';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface ResearchOrchestrationResult {
   success: boolean;
@@ -69,6 +70,28 @@ export async function requestResearchForTask(
       isResearchEligible: true,
     });
 
+    // Step 1.5: Classify task type
+    const userProfile = await repos.userProfiles.getByUserId(task.userId).catch(() => null);
+    const taskType = classifyTaskType(task, userProfile);
+
+    // DEMO: Override meeting context with Daniel Park for demo purposes
+    let meetingContext = taskType === 'meeting_prep' ? extractMeetingContext(task) : undefined;
+    if (taskType === 'meeting_prep') {
+      console.log('[Orchestrator] DEMO MODE: Overriding with Daniel Park context');
+      meetingContext = {
+        prospectName: 'Daniel Park',
+        prospectTitle: 'CEO',
+        prospectCompany: 'Pickle AI',
+        prospectEmail: 'daniel@pickle.com',
+        meetingDate: meetingContext?.meetingDate || 'this week',
+      };
+    }
+
+    console.log(`[Orchestrator] Task type: ${taskType}`);
+    if (meetingContext) {
+      console.log(`[Orchestrator] Meeting context:`, meetingContext);
+    }
+
     // Step 2: Get intent (for MVP, use default)
     // In production, this would come from user selection
     const intent: ResearchIntent = 'general_summary';
@@ -80,7 +103,7 @@ export async function requestResearchForTask(
 
     // Step 3: Plan
     console.log('[Orchestrator] Step 3: Planning research subtasks...');
-    const subtasks = await planWebResearch(task, intent);
+    const subtasks = await planWebResearch(task, intent, taskType, meetingContext);
     console.log(`[Orchestrator] ✅ Generated ${subtasks.length} subtasks`);
 
     // Save plan to DB
@@ -100,17 +123,27 @@ export async function requestResearchForTask(
 
     // Step 4: Execute
     console.log('[Orchestrator] Step 4: Executing research...');
-    const executionResult = await executeResearch(subtasks, intent);
+    const executionResult = await executeResearch(subtasks, intent, task.userId, taskType, meetingContext);
     console.log(`[Orchestrator] ✅ Research completed: ${executionResult.pagesAnalyzed} pages analyzed`);
 
     // Step 5: Save results
     console.log('[Orchestrator] Step 5: Saving results...');
+    console.log('[Orchestrator] 📊 DETAILED REPORT STRUCTURE:');
+    console.log(JSON.stringify({
+      taskType,
+      reportKeys: Object.keys(executionResult.report),
+      reportStructure: executionResult.report,
+      recommendedPagesCount: executionResult.recommended_pages.length,
+      subtaskResultsCount: executionResult.subtask_results.length,
+    }, null, 2));
+
     const result = await repos.researchResults.create({
       taskId: task.id,
       planId: plan.id,
       userId: task.userId,
       report: executionResult.report,
       recommended_pages: executionResult.recommended_pages,
+      subtask_results: executionResult.subtask_results,
       sourcesCount: executionResult.sourcesCount,
       pagesAnalyzed: executionResult.pagesAnalyzed,
     });
@@ -172,5 +205,6 @@ export async function getResearchResults(taskId: string): Promise<ResearchResult
     intent: (await repos.researchPlans.getByTaskId(taskId))?.intent || 'general_summary',
     report: result.report,
     recommended_pages: result.recommended_pages,
+    subtask_results: result.subtask_results,
   };
 }

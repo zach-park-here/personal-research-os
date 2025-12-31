@@ -3,7 +3,7 @@
  */
 
 import { BaseRepository } from './base.repository';
-import type { ResearchResultDb, ResearchReport, RecommendedPage } from '@personal-research-os/shared/types/research';
+import type { ResearchResultDb, ResearchReport, RecommendedPage, SubtaskResult } from '@personal-research-os/shared/types/research';
 
 export class ResearchResultRepository extends BaseRepository {
   private readonly TABLE = 'research_results';
@@ -17,9 +17,19 @@ export class ResearchResultRepository extends BaseRepository {
     userId: string;
     report: ResearchReport;
     recommended_pages: RecommendedPage[];
+    subtask_results: SubtaskResult[];
     sourcesCount: number;
     pagesAnalyzed: number;
   }): Promise<ResearchResultDb> {
+    console.log('[ResearchResultRepository] 💾 SAVING TO DATABASE:');
+    console.log(JSON.stringify({
+      taskId: result.taskId,
+      reportKeys: Object.keys(result.report),
+      fullReport: result.report,
+      recommendedPagesCount: result.recommended_pages.length,
+      subtaskResultsCount: result.subtask_results.length,
+    }, null, 2));
+
     const { data, error } = await this.db
       .from(this.TABLE)
       .insert({
@@ -28,6 +38,7 @@ export class ResearchResultRepository extends BaseRepository {
         user_id: result.userId,
         report: result.report,
         recommended_pages: result.recommended_pages,
+        subtask_results: result.subtask_results,
         sources_count: result.sourcesCount,
         pages_analyzed: result.pagesAnalyzed,
       })
@@ -37,6 +48,12 @@ export class ResearchResultRepository extends BaseRepository {
     if (error) {
       this.handleError(error, 'ResearchResultRepository.create');
     }
+
+    console.log('[ResearchResultRepository] ✅ Saved successfully, reading back:');
+    console.log(JSON.stringify({
+      savedReportKeys: Object.keys(data.report || {}),
+      savedReport: data.report,
+    }, null, 2));
 
     return this.mapRowToResult(data);
   }
@@ -88,6 +105,7 @@ export class ResearchResultRepository extends BaseRepository {
       userId: row.user_id,
       report: row.report,
       recommended_pages: row.recommended_pages,
+      subtask_results: row.subtask_results || [],
       sourcesCount: row.sources_count,
       pagesAnalyzed: row.pages_analyzed,
       createdAt: row.created_at,

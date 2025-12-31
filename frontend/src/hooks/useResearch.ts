@@ -1,59 +1,97 @@
 import { useState, useEffect } from 'react';
-import { ResearchResult, ResearchStep } from '../types';
-import { MOCK_RESEARCH_RESULT } from '../lib/mockData';
+import { api } from '../lib/api';
+import type { ResearchResult } from '@personal-research-os/shared/types/research';
+import type { ResearchStep } from '../types';
 
 /**
- * Hook to simulate research progress and results
- * In production, this would poll the API for status updates
+ * Hook to fetch research results from backend API
+ * Polls the API until research is completed
  */
 export function useResearch(taskId: string) {
   const [researchResult, setResearchResult] = useState<ResearchResult | null>(null);
-  const [researchSteps, setResearchSteps] = useState<ResearchStep[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [researchSteps, setResearchSteps] = useState<ResearchStep[]>([
+    { step: 1, total: 4, label: 'Planning research queries with o1...', status: 'pending' },
+    { step: 2, total: 4, label: 'Executing web searches with GPT-4o...', status: 'pending' },
+    { step: 3, total: 4, label: 'Analyzing search results...', status: 'pending' },
+    { step: 4, total: 4, label: 'Generating meeting prep report with o1...', status: 'pending' },
+  ]);
 
   useEffect(() => {
-    // Simulate research progress
-    const steps: ResearchStep[] = [
-      { step: 1, total: 4, label: 'Searching top reports...', status: 'completed' },
-      { step: 2, total: 4, label: 'Analyzing 12 sources...', status: 'in_progress' },
-      { step: 3, total: 4, label: 'Extracting key findings...', status: 'pending' },
-      { step: 4, total: 4, label: 'Building final brief...', status: 'pending' },
-    ];
+    let isMounted = true;
+    let pollInterval: NodeJS.Timeout | null = null;
+    let currentStepIndex = 0;
 
-    setResearchSteps(steps);
-
-    // Simulate step transitions
-    let currentStep = 1;
-    const interval = setInterval(() => {
-      currentStep++;
-      if (currentStep > 4) {
-        clearInterval(interval);
-        // Research complete
-        setResearchSteps(null);
-        setResearchResult({
-          ...MOCK_RESEARCH_RESULT,
-          task_id: taskId,
-        });
-        return;
+    // Simulate progress through steps
+    const progressInterval = setInterval(() => {
+      if (currentStepIndex < 4 && isLoading) {
+        setResearchSteps(prev => prev.map((step, idx) => {
+          if (idx < currentStepIndex) return { ...step, status: 'completed' as const };
+          if (idx === currentStepIndex) return { ...step, status: 'in_progress' as const };
+          return step;
+        }));
+        currentStepIndex++;
       }
+    }, 5000); // Update every 5 seconds
 
-      setResearchSteps((prev) =>
-        prev!.map((step) => ({
-          ...step,
-          status:
-            step.step < currentStep
-              ? 'completed'
-              : step.step === currentStep
-              ? 'in_progress'
-              : 'pending',
-        }))
-      );
-    }, 2000); // Update every 2 seconds for demo
+    const fetchResearch = async () => {
+      try {
+        console.log(`[useResearch] Fetching research for task ${taskId}`);
+        const response = await api.research.getResults(taskId);
 
-    return () => clearInterval(interval);
-  }, [taskId]);
+        if (!isMounted) return;
+
+        if (response) {
+          console.log(`[useResearch] Research found for task ${taskId}`);
+          setResearchResult(response.research);
+          setIsLoading(false);
+          setError(null);
+
+          // Stop polling once we have results
+          if (pollInterval) {
+            clearInterval(pollInterval);
+          }
+        } else {
+          console.log(`[useResearch] No research found yet for task ${taskId}, will poll...`);
+          setResearchResult(null);
+          setIsLoading(true);
+        }
+      } catch (err: any) {
+        console.error(`[useResearch] Error fetching research:`, err);
+        if (isMounted) {
+          setError(err.message || 'Failed to load research results');
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Initial fetch
+    fetchResearch();
+
+    // Poll every 3 seconds if no results yet
+    pollInterval = setInterval(() => {
+      if (isLoading && !error) {
+        fetchResearch();
+      }
+    }, 3000);
+
+    // Cleanup
+    return () => {
+      isMounted = false;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+    };
+  }, [taskId, isLoading]);
 
   return {
     researchResult,
+    isLoading,
+    error,
     researchSteps,
   };
 }
