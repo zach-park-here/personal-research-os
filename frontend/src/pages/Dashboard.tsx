@@ -25,6 +25,13 @@ function Dashboard() {
   const isMeetingPrep = selectedTask?.researchStatus === 'completed' &&
     selectedTask?.taskType === 'meeting_prep';
 
+  // Check if research is still in progress
+  const isResearchInProgress = selectedTask?.isResearchEligible &&
+    selectedTask?.researchStatus &&
+    selectedTask?.researchStatus !== 'completed' &&
+    selectedTask?.researchStatus !== 'not_started' &&
+    selectedTask?.researchStatus !== 'failed';
+
   // DEBUG: Log routing decision
   if (selectedTask) {
     console.log('[Dashboard] 🔍 ROUTING DEBUG:');
@@ -33,12 +40,13 @@ function Dashboard() {
     console.log('  selectedTask.taskType:', selectedTask.taskType);
     console.log('  selectedTask.researchStatus:', selectedTask.researchStatus);
     console.log('  isMeetingPrep:', isMeetingPrep);
+    console.log('  isResearchInProgress:', isResearchInProgress);
     console.log('  researchResult exists:', !!researchResult);
     if (researchResult?.report) {
       console.log('  report keys:', Object.keys(researchResult.report));
       console.log('  has persona_analysis:', 'persona_analysis' in researchResult.report);
     }
-    console.log('  Will show:', isMeetingPrep ? 'MeetingPrepView' : 'TaskDetailModal');
+    console.log('  Will show:', isResearchInProgress ? 'BLOCKED' : isMeetingPrep ? 'MeetingPrepView' : 'TaskDetailModal');
   }
 
   // Count completed tasks (including subtasks)
@@ -50,33 +58,8 @@ function Dashboard() {
     setIsCreatingTask(true);
 
     try {
-      // Create the main task first
-      const task = await addTask(taskInputValue);
-
-      // Call planner API to determine if subtasks are needed
-      const plan = await api.research.plan('demo-user', taskInputValue);
-
-      // Only create subtasks if planner suggests queries (meaning task needs breakdown)
-      if (plan.queries && plan.queries.length > 0) {
-        const subtasks: Task[] = plan.queries.map((query) => ({
-          id: crypto.randomUUID(),
-          userId: 'demo-user',
-          title: query.title,
-          description: '',
-          priority: 'medium' as const,
-          status: 'active' as const,
-          tags: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          assignedTo: 'ai' as const,
-          isResearch: true,
-          reasoning: `Research query: ${query.query}`,
-          researchStatus: 'not_started' as const,
-          parentId: task.id,
-        }));
-
-        updateTask(task.id, { subtasks });
-      }
+      // Create task - backend will automatically trigger research if needed
+      await addTask(taskInputValue);
 
       // Reset input
       setTaskInputValue('');
@@ -231,7 +214,7 @@ function Dashboard() {
       </div>
 
       {/* Meeting Prep Modal View - Only show when completed */}
-      {selectedTask && isMeetingPrep && researchResult && (
+      {selectedTask && isMeetingPrep && researchResult && !isResearchInProgress && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setSelectedTask(null)}
@@ -252,7 +235,7 @@ function Dashboard() {
       )}
 
       {/* Task Detail Modal (for general research or in-progress meeting prep) */}
-      {selectedTask && !isMeetingPrep && (
+      {selectedTask && !isMeetingPrep && !isResearchInProgress && (
         <TaskDetailModal
           task={selectedTask}
           onClose={() => setSelectedTask(null)}

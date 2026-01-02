@@ -33,23 +33,24 @@ tasksRouter.get('/', async (req, res) => {
           const userProfile = await repos.userProfiles.getByUserId(task.userId).catch(() => null);
           taskType = classifyTaskType(task, userProfile);
 
-          // First check if research is completed
-          const researchResult = await researchResults.getByTaskId(task.id).catch(() => null);
-          if (researchResult) {
-            researchStatus = 'completed';
+          // IMPORTANT: Check research tracking status FIRST (to catch in-progress state)
+          // Then check if completed result exists
+          const researchTracking = await researchTasks.getByTaskId(task.id).catch(() => null);
+          if (researchTracking) {
+            const status = researchTracking.researchStatus;
+            // Map detailed statuses to simplified ones for UI
+            if (status === 'completed') {
+              researchStatus = 'completed';
+            } else if (status === 'classifying' || status === 'planning' || status === 'executing') {
+              researchStatus = 'executing';
+            } else if (status === 'failed') {
+              researchStatus = 'not_started';
+            }
           } else {
-            // Check actual research tracking status from research_tasks table
-            const researchTracking = await researchTasks.getByTaskId(task.id).catch(() => null);
-            if (researchTracking) {
-              const status = researchTracking.researchStatus;
-              // Map detailed statuses to simplified ones for UI
-              if (status === 'completed') {
-                researchStatus = 'completed';
-              } else if (status === 'classifying' || status === 'planning' || status === 'executing') {
-                researchStatus = 'executing';
-              } else if (status === 'failed') {
-                researchStatus = 'not_started';
-              }
+            // If no tracking record exists, check if a completed result was saved
+            const researchResult = await researchResults.getByTaskId(task.id).catch(() => null);
+            if (researchResult) {
+              researchStatus = 'completed';
             }
           }
         }
@@ -163,8 +164,42 @@ tasksRouter.patch('/:id', async (req, res) => {
 // DELETE /api/tasks/:id
 tasksRouter.delete('/:id', async (req, res) => {
   try {
-    const { tasks } = getRepositories();
-    await tasks.delete(req.params.id);
+    const taskId = req.params.id;
+    const repos = getRepositories();
+
+    console.log(`[TasksAPI] 🗑️ Deleting task ${taskId} and all related research data...`);
+
+    // Delete related research data first
+    try {
+      // Delete research results
+      const researchResult = await repos.researchResults.getByTaskId(taskId).catch(() => null);
+      if (researchResult) {
+        await repos.researchResults.delete(researchResult.id);
+        console.log(`[TasksAPI] ✅ Deleted research result for task ${taskId}`);
+      }
+
+      // Delete research tracking
+      const researchTask = await repos.researchTasks.getByTaskId(taskId).catch(() => null);
+      if (researchTask) {
+        await repos.researchTasks.delete(researchTask.id);
+        console.log(`[TasksAPI] ✅ Deleted research tracking for task ${taskId}`);
+      }
+
+      // Delete research plans
+      const researchPlan = await repos.researchPlans.getByTaskId(taskId).catch(() => null);
+      if (researchPlan) {
+        await repos.researchPlans.delete(researchPlan.id);
+        console.log(`[TasksAPI] ✅ Deleted research plan for task ${taskId}`);
+      }
+    } catch (cleanupErr) {
+      console.error(`[TasksAPI] ⚠️ Failed to cleanup research data for task ${taskId}:`, cleanupErr);
+      // Continue with task deletion even if cleanup fails
+    }
+
+    // Delete the task itself
+    await repos.tasks.delete(taskId);
+    console.log(`[TasksAPI] ✅ Deleted task ${taskId}`);
+
     res.status(204).send();
   } catch (error) {
     console.error('Failed to delete task:', error);

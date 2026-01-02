@@ -69,6 +69,20 @@ export class ResearchPlanRepository extends BaseRepository {
   }
 
   /**
+   * Delete research plan
+   */
+  async delete(id: string): Promise<void> {
+    const { error } = await this.db
+      .from(this.TABLE)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      this.handleError(error, 'ResearchPlanRepository.delete');
+    }
+  }
+
+  /**
    * Map database row to ResearchPlan
    */
   private mapRowToPlan(row: any): ResearchPlan {

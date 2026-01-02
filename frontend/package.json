@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "React web UI for Personal Research OS",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

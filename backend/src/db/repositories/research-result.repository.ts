@@ -95,6 +95,20 @@ export class ResearchResultRepository extends BaseRepository {
   }
 
   /**
+   * Delete research result
+   */
+  async delete(id: string): Promise<void> {
+    const { error } = await this.db
+      .from(this.TABLE)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      this.handleError(error, 'ResearchResultRepository.delete');
+    }
+  }
+
+  /**
    * Map database row to ResearchResultDb
    */
   private mapRowToResult(row: any): ResearchResultDb {

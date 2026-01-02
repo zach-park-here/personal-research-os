@@ -105,4 +105,18 @@ export class ResearchTaskRepository extends BaseRepository {
     }
   }
 
+  /**
+   * Delete research task
+   */
+  async delete(id: string): Promise<void> {
+    const { error } = await this.db
+      .from('research_tasks')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete research task: ${error.message}`);
+    }
+  }
+
 }

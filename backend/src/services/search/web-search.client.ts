@@ -14,6 +14,23 @@ export interface WebSearchClient {
 }
 
 /**
+ * Enhanced Perplexity Response
+ * Contains both the AI synthesis and the raw citation URLs
+ */
+export interface PerplexityResponse {
+  synthesis: string; // Perplexity's full AI-synthesized answer
+  citations: string[]; // URLs cited in the answer
+  searchResults: Array<{
+    url: string;
+    snippet: string;
+  }>;
+}
+
+export interface PerplexitySearchClient {
+  searchWebEnhanced(query: string, limit?: number): Promise<PerplexityResponse>;
+}
+
+/**
  * Tavily Search Client
  * https://tavily.com/
  */
@@ -87,32 +104,36 @@ export class GPTSearchClient implements WebSearchClient {
 
   async searchWeb(query: string, limit: number = 5): Promise<RawSearchResult[]> {
     try {
-      console.log(`[GPTSearch] Searching for: "${query}"`);
+      console.log(`[GPTSearch] Searching with gpt-4o + web_search: "${query}"`);
 
+      // Use GPT-4o with web_search tool for actual web browsing
       const response = await this.client.chat.completions.create({
         model: 'gpt-4o',
         messages: [
           {
             role: 'user',
-            content: `Search the web for: "${query}"\n\nReturn ${limit} relevant search results in this EXACT JSON format:\n[\n  {\n    "title": "Page title",\n    "url": "https://example.com",\n    "snippet": "Relevant excerpt or summary"\n  }\n]\n\nReturn ONLY valid JSON array, no other text.`,
+            content: query, // Pass query as natural language - GPT will use web_search automatically
           },
         ],
+        // Note: web_search is automatically available in ChatGPT API when model supports it
+        // GPT-4o will trigger web search if needed based on the query
       });
 
-      const content = response.choices[0].message.content || '[]';
-      const results = JSON.parse(content);
+      const content = response.choices[0].message.content || '';
 
-      if (!Array.isArray(results)) {
-        throw new Error('Invalid response format from GPT');
-      }
+      console.log(`[GPTSearch] Raw response (first 500 chars):`, content.slice(0, 500));
 
-      return results.slice(0, limit).map((result: any, index: number) => ({
-        id: `gpt_${Date.now()}_${index}`,
+      // GPT-4o with web search returns natural language response, not JSON
+      // We need to extract search results from the response
+      // For now, return as a single result with the full response as snippet
+      // This is better than nothing for LinkedIn searches
+      return [{
+        id: `gpt_${Date.now()}_0`,
         source: 'web' as const,
-        title: result.title || '',
-        url: result.url || '',
-        snippet: result.snippet || '',
-      }));
+        title: `Web search results for: ${query.slice(0, 100)}`,
+        url: '', // No specific URL for aggregated results
+        snippet: content.slice(0, 1000), // Take first 1000 chars
+      }];
 
     } catch (error: any) {
       console.error('[GPTSearch] Search failed:', error);
@@ -125,7 +146,7 @@ export class GPTSearchClient implements WebSearchClient {
  * Perplexity Search Client
  * https://docs.perplexity.ai/
  */
-export class PerplexitySearchClient implements WebSearchClient {
+export class PerplexitySearchClient implements WebSearchClient, PerplexitySearchClient {
   private apiKey: string;
   private baseUrl = 'https://api.perplexity.ai';
 
@@ -155,15 +176,15 @@ export class PerplexitySearchClient implements WebSearchClient {
           messages: [
             {
               role: 'system',
-              content: 'You are a search engine that returns search results in JSON format. Return ONLY valid JSON, no other text.',
+              content: 'You are a helpful research assistant. Provide detailed, factual information based on web search results. Focus on recent sources from January 2026.',
             },
             {
               role: 'user',
-              content: `Search the web for: "${query}"\n\nReturn ${limit} relevant search results in this EXACT JSON format:\n[\n  {\n    "title": "Page title",\n    "url": "https://example.com",\n    "snippet": "Relevant excerpt or summary"\n  }\n]\n\nReturn ONLY the JSON array, no other text. Focus on recent sources from December 2025.`,
+              content: query, // Pass the full query as-is
             },
           ],
-          temperature: 0.2,
-          max_tokens: 2000,
+          temperature: 0.3,
+          max_tokens: 3000,
         }),
       });
 
@@ -173,26 +194,99 @@ export class PerplexitySearchClient implements WebSearchClient {
       }
 
       const data: any = await response.json();
-      const content = data.choices?.[0]?.message?.content || '[]';
+      const content = data.choices?.[0]?.message?.content || '';
+      const citations = data.citations || [];
 
-      // Parse JSON response
-      const results = JSON.parse(content);
+      // Log full Perplexity API response
+      console.log(`\n========== PERPLEXITY RAW API RESPONSE ==========`);
+      console.log(JSON.stringify(data, null, 2));
+      console.log(`========== END PERPLEXITY RAW API RESPONSE ==========\n`);
 
-      if (!Array.isArray(results)) {
-        throw new Error('Invalid response format from Perplexity');
-      }
+      console.log(`[PerplexitySearch] Content length:`, content.length, 'characters');
+      console.log(`[PerplexitySearch] Citations count:`, citations.length);
+      console.log(`[PerplexitySearch] Content preview (first 500 chars):`, content.slice(0, 500));
 
-      return results.slice(0, limit).map((result: any, index: number) => ({
-        id: `perplexity_${Date.now()}_${index}`,
+      // Perplexity returns natural language response with citations
+      // We'll create a single result with the full response as snippet
+      const rawSearchResult = [{
+        id: `perplexity_${Date.now()}`,
         source: 'web' as const,
-        title: result.title || '',
-        url: result.url || '',
-        snippet: result.snippet || '',
-      }));
+        title: 'LinkedIn Activity Analysis',
+        url: citations[0] || 'https://linkedin.com',
+        snippet: content, // Full Perplexity response
+      }];
+
+      // Log converted RawSearchResult
+      console.log(`\n========== CONVERTED TO RawSearchResult ==========`);
+      console.log(JSON.stringify(rawSearchResult, null, 2));
+      console.log(`========== END RawSearchResult ==========\n`);
+
+      return rawSearchResult;
 
     } catch (error: any) {
       console.error('[PerplexitySearch] Search failed:', error);
       throw new Error(`Perplexity search failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Enhanced search method that returns full Perplexity response structure
+   * Used by multi-turn intent-based research architecture
+   */
+  async searchWebEnhanced(query: string, limit: number = 5): Promise<PerplexityResponse> {
+    if (!this.apiKey) {
+      throw new Error('Perplexity API key not configured');
+    }
+
+    try {
+      console.log(`[PerplexitySearch] Enhanced search for: "${query}" (limit: ${limit})`);
+
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'sonar',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful research assistant. Provide detailed, factual information based on web search results. Focus on recent sources from January 2026.',
+            },
+            {
+              role: 'user',
+              content: query,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 3000,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
+      }
+
+      const data: any = await response.json();
+      const content = data.choices?.[0]?.message?.content || '';
+      const citations = data.citations || [];
+
+      console.log(`[PerplexitySearch] Enhanced result - Synthesis: ${content.length} chars, Citations: ${citations.length}`);
+
+      return {
+        synthesis: content,
+        citations: citations,
+        searchResults: citations.map((url: string, idx: number) => ({
+          url,
+          snippet: content.slice(idx * 200, (idx + 1) * 200), // Rough snippet extraction
+        })),
+      };
+
+    } catch (error: any) {
+      console.error('[PerplexitySearch] Enhanced search failed:', error);
+      throw new Error(`Perplexity enhanced search failed: ${error.message}`);
     }
   }
 }

@@ -8,12 +8,22 @@ interface MeetingPrepViewProps {
 export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
   const { report } = research;
 
+  // DEBUG: Log report structure
+  console.log('[MeetingPrepView] 🔍 DEBUG:');
+  console.log('  report keys:', Object.keys(report));
+  console.log('  has persona_analysis:', 'persona_analysis' in report);
+  console.log('  has company_intelligence:', 'company_intelligence' in report);
+  console.log('  full report:', report);
+
   // Type guard to check if report has meeting prep structure
   const isMeetingPrep = 'persona_analysis' in report && 'company_intelligence' in report;
 
   if (!isMeetingPrep) {
+    console.log('[MeetingPrepView] ❌ Not meeting prep format - showing fallback');
     return <div className="p-6 text-center text-gray-500 dark:text-gray-400">This is not a meeting prep report.</div>;
   }
+
+  console.log('[MeetingPrepView] ✅ Meeting prep format detected - rendering full view');
 
   const personaAnalysis = report.persona_analysis;
   const companyIntel = report.company_intelligence;
@@ -50,22 +60,6 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
                 <span>Decision Maker</span>
               </div>
             </div>
-
-            {/* Quick Stats */}
-            <div className="flex gap-4">
-              <div className="bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#3A3A3C] rounded-lg p-4 text-center min-w-[100px]">
-                <div className="text-2xl font-bold text-gray-900 dark:text-[#ECECEC]">
-                  {companyIntel?.product_launches?.length || 0}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-[#888888] mt-1">Recent Launches</div>
-              </div>
-              <div className="bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#3A3A3C] rounded-lg p-4 text-center min-w-[100px]">
-                <div className="text-2xl font-bold text-gray-900 dark:text-[#ECECEC]">
-                  {research.recommended_pages?.length || 0}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-[#888888] mt-1">Key Resources</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -81,9 +75,37 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-[#ECECEC]">Company Intelligence</h2>
           </div>
 
+          {/* Product Launches */}
+          {companyIntel?.product_launches && companyIntel.product_launches.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-[#888888] mb-3 uppercase tracking-wide">
+                Recent Launches
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {companyIntel.product_launches.map((product, idx) => {
+                  // Create a Google search URL for the product launch
+                  const searchQuery = encodeURIComponent(`${product} ${personaAnalysis?.persona_company || ''}`);
+                  const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
+
+                  return (
+                    <a
+                      key={idx}
+                      href={searchUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md text-sm font-medium hover:bg-gray-700 dark:hover:bg-gray-300 transition-colors cursor-pointer"
+                    >
+                      {product}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Recent News */}
           {companyIntel?.recent_news && companyIntel.recent_news.length > 0 && (
-            <div className="mb-6">
+            <div>
               <h3 className="text-xs font-semibold text-gray-500 dark:text-[#888888] mb-3 uppercase tracking-wide">
                 Recent News
               </h3>
@@ -92,22 +114,6 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
                   <div key={idx} className="flex items-start gap-2 p-3 bg-gray-50 dark:bg-[#252525] border border-gray-200 dark:border-[#3A3A3C] rounded-md">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-900 dark:bg-gray-100 mt-2 flex-shrink-0" />
                     <p className="text-sm text-gray-700 dark:text-[#C5C7CA] leading-relaxed">{news}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Product Launches */}
-          {companyIntel?.product_launches && companyIntel.product_launches.length > 0 && (
-            <div>
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-[#888888] mb-3 uppercase tracking-wide">
-                Recent Launches
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {companyIntel.product_launches.map((product, idx) => (
-                  <div key={idx} className="px-3 py-1.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md text-sm font-medium">
-                    {product}
                   </div>
                 ))}
               </div>

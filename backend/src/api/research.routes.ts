@@ -86,16 +86,7 @@ researchRouter.post('/plan', async (req, res) => {
     let meetingContext = undefined;
     if (taskType === 'meeting_prep') {
       meetingContext = extractMeetingContext(tempTask);
-
-      // DEMO: Override with Sam Altman
-      console.log('[API] DEMO MODE: Overriding with Sam Altman context');
-      meetingContext = {
-        prospectName: 'Sam Altman',
-        prospectTitle: 'CEO',
-        prospectCompany: 'OpenAI',
-        prospectEmail: 'sam@openai.com',
-        meetingDate: meetingContext?.meetingDate || 'this week',
-      };
+      // Note: Demo context override happens in orchestrator.service.ts
     }
 
     // Generate research queries

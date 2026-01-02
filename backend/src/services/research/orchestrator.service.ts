@@ -8,7 +8,7 @@
 import { getRepositories } from '../../db/repositories';
 import { isResearchTask, classifyTaskType, extractMeetingContext } from './classifier.service';
 import { planWebResearch } from './planner.service';
-import { executeResearch } from './executor.service';
+import { executeResearch, executeIntentBasedResearch } from './executor.service';
 import type { ResearchIntent, ResearchResult, TaskType } from '@personal-research-os/shared/types/research';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -123,7 +123,17 @@ export async function requestResearchForTask(
 
     // Step 4: Execute
     console.log('[Orchestrator] Step 4: Executing research...');
-    const executionResult = await executeResearch(subtasks, intent, task.userId, taskType, meetingContext);
+
+    let executionResult;
+    if (taskType === 'meeting_prep' && meetingContext) {
+      // Use new intent-based architecture for meeting prep
+      console.log('[Orchestrator] Using intent-based research architecture for meeting prep');
+      executionResult = await executeIntentBasedResearch(task.userId, intent, taskType, meetingContext);
+    } else {
+      // Use original architecture for other research types
+      executionResult = await executeResearch(subtasks, intent, task.userId, taskType, meetingContext);
+    }
+
     console.log(`[Orchestrator] ✅ Research completed: ${executionResult.pagesAnalyzed} pages analyzed`);
 
     // Step 5: Save results

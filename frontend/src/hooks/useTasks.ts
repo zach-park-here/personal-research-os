@@ -21,7 +21,10 @@ export function useTasks() {
   useEffect(() => {
     // Check if any tasks are currently researching
     const hasResearchInProgress = tasks.some(
-      task => task.researchStatus === 'executing'
+      task => task.researchStatus &&
+             task.researchStatus !== 'completed' &&
+             task.researchStatus !== 'not_started' &&
+             task.researchStatus !== 'failed'
     );
 
     if (hasResearchInProgress) {
@@ -116,14 +119,16 @@ export function useTasks() {
           await api.research.request(newTask.id);
           console.log(`[useTasks] Research pipeline started for task ${newTask.id}`);
 
-          // Update task status to indicate research is in progress
-          const updatedTask = await api.tasks.update(newTask.id, {
-            researchStatus: 'in_progress',
-          });
-
+          // Immediately update local state to show "Researching" badge
           setTasks((prev) =>
-            prev.map((t) => (t.id === newTask.id ? { ...updatedTask, isResearchEligible: true } : t))
+            prev.map((t) =>
+              t.id === newTask.id
+                ? { ...t, researchStatus: 'executing' as any, isResearchEligible: true }
+                : t
+            )
           );
+
+          console.log(`[useTasks] ✅ Set researchStatus to 'executing' - badge should now show`);
         } catch (researchErr: any) {
           console.error('[useTasks] Failed to start research:', researchErr);
           // Don't fail task creation if research fails
