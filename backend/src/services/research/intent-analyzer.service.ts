@@ -6,6 +6,7 @@
  */
 
 import OpenAI from 'openai';
+import { LLM_MODELS } from '../../config/llm.config';
 
 export interface Intent {
   id: string;
@@ -128,7 +129,7 @@ Generate research intents and longtail search queries for this meeting preparati
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'o1',
+      model: LLM_MODELS.REASONING,
       messages: [
         {
           role: 'user',

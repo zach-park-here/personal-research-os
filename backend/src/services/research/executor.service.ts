@@ -25,6 +25,7 @@ import {
   type IntentResult,
   type PerplexityResponse
 } from './intent-synthesizer.service';
+import { LLM_MODELS } from '../../config/llm.config';
 
 // Lazy initialize OpenAI (to ensure .env is loaded first)
 let openai: OpenAI | null = null;
@@ -459,7 +460,7 @@ IMPORTANT: Tailor recommendations and insights to the user's role, company, and 
     console.log('[Executor] Prompt length:', prompt.length, 'characters');
 
     const completion = await client.chat.completions.create({
-      model: 'o1',
+      model: LLM_MODELS.REASONING,
       messages: [
         {
           role: 'user',
@@ -676,7 +677,7 @@ ${result.synthesis}
   console.log('[IntentBasedResearch] Calling O1 for final meeting brief synthesis...');
 
   const finalResponse = await client.chat.completions.create({
-    model: 'o1',
+    model: LLM_MODELS.REASONING,
     messages: [
       {
         role: 'user',

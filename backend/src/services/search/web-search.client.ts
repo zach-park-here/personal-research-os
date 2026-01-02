@@ -8,6 +8,7 @@
 
 import type { RawSearchResult } from '@personal-research-os/shared/types/research';
 import OpenAI from 'openai';
+import { LLM_MODELS, LLM_PARAMS } from '../../config/llm.config';
 
 export interface WebSearchClient {
   searchWeb(query: string, limit?: number): Promise<RawSearchResult[]>;
@@ -108,7 +109,7 @@ export class GPTSearchClient implements WebSearchClient {
 
       // Use GPT-4o with web_search tool for actual web browsing
       const response = await this.client.chat.completions.create({
-        model: 'gpt-4o',
+        model: LLM_MODELS.FAST,
         messages: [
           {
             role: 'user',
@@ -172,7 +173,7 @@ export class PerplexitySearchClient implements WebSearchClient, PerplexitySearch
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'sonar',
+          model: LLM_MODELS.SEARCH,
           messages: [
             {
               role: 'system',
@@ -184,7 +185,7 @@ export class PerplexitySearchClient implements WebSearchClient, PerplexitySearch
             },
           ],
           temperature: 0.3,
-          max_tokens: 3000,
+          max_tokens: LLM_PARAMS.MAX_TOKENS.SEARCH,
         }),
       });
 
@@ -248,7 +249,7 @@ export class PerplexitySearchClient implements WebSearchClient, PerplexitySearch
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'sonar',
+          model: LLM_MODELS.SEARCH,
           messages: [
             {
               role: 'system',
@@ -260,7 +261,7 @@ export class PerplexitySearchClient implements WebSearchClient, PerplexitySearch
             },
           ],
           temperature: 0.3,
-          max_tokens: 3000,
+          max_tokens: LLM_PARAMS.MAX_TOKENS.SEARCH,
         }),
       });
 

@@ -11,6 +11,7 @@ import type { ResearchIntent, ResearchSubtask, TaskType } from '@personal-resear
 import { v4 as uuidv4 } from 'uuid';
 import { getUserProfile } from '../../db/repositories/user-profile.repository';
 import type { MeetingContext } from './classifier.service';
+import { LLM_MODELS } from '../../config/llm.config';
 
 // Lazy initialize OpenAI (to ensure .env is loaded first)
 let openai: OpenAI | null = null;
@@ -146,7 +147,7 @@ IMPORTANT: For LinkedIn queries, include both name AND company to verify correct
 
     try {
       const completion = await client.chat.completions.create({
-        model: 'o1',
+        model: LLM_MODELS.REASONING,
         messages: [{ role: 'user', content: prompt }],
       });
 

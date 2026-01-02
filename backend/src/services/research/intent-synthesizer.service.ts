@@ -7,6 +7,7 @@
 
 import OpenAI from 'openai';
 import type { Intent } from './intent-analyzer.service';
+import { LLM_MODELS } from '../../config/llm.config';
 
 export interface PerplexityResponse {
   synthesis: string; // Perplexity's AI-synthesized answer
@@ -100,7 +101,7 @@ Target length: ~1000 words (approximately 5000-7000 characters).`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'o1',
+      model: LLM_MODELS.REASONING,
       messages: [
         {
           role: 'user',
