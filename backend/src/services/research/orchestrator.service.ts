@@ -11,6 +11,7 @@ import { planWebResearch } from './planner.service';
 import { executeResearch, executeIntentBasedResearch } from './executor.service';
 import type { ResearchIntent, ResearchResult, TaskType } from '@personal-research-os/shared/types/research';
 import { v4 as uuidv4 } from 'uuid';
+import { DEMO_MEETING_CONTEXT } from '../../config/demo.config';
 
 export interface ResearchOrchestrationResult {
   success: boolean;
@@ -74,16 +75,13 @@ export async function requestResearchForTask(
     const userProfile = await repos.userProfiles.getByUserId(task.userId).catch(() => null);
     const taskType = classifyTaskType(task, userProfile);
 
-    // DEMO: Override meeting context with Daniel Park for demo purposes
+    // DEMO: Override meeting context with demo data for testing purposes
     let meetingContext = taskType === 'meeting_prep' ? extractMeetingContext(task) : undefined;
     if (taskType === 'meeting_prep') {
-      console.log('[Orchestrator] DEMO MODE: Overriding with Daniel Park context');
+      console.log('[Orchestrator] DEMO MODE: Using demo meeting context');
       meetingContext = {
-        prospectName: 'Daniel Park',
-        prospectTitle: 'CEO',
-        prospectCompany: 'Pickle AI',
-        prospectEmail: 'daniel@pickle.com',
-        meetingDate: meetingContext?.meetingDate || 'this week',
+        ...DEMO_MEETING_CONTEXT,
+        meetingDate: meetingContext?.meetingDate || DEMO_MEETING_CONTEXT.meetingDate,
       };
     }
 
