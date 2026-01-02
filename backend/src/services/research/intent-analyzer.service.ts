@@ -7,6 +7,7 @@
 
 import OpenAI from 'openai';
 import { LLM_MODELS } from '../../config/llm.config';
+import { RESEARCH_LIMITS } from '../../config/research.config';
 
 export interface Intent {
   id: string;
@@ -140,7 +141,7 @@ Generate research intents and longtail search queries for this meeting preparati
 
     const content = response.choices[0].message.content || '';
 
-    console.log('[IntentAnalyzer] O1 Response (first 500 chars):', content.slice(0, 500));
+    console.log(`[IntentAnalyzer] O1 Response (first ${RESEARCH_LIMITS.PREVIEW_CHARS} chars):`, content.slice(0, RESEARCH_LIMITS.PREVIEW_CHARS));
 
     // Parse JSON response
     const jsonMatch = content.match(/\{[\s\S]*\}/);

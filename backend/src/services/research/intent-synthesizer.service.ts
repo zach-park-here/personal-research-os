@@ -8,6 +8,7 @@
 import OpenAI from 'openai';
 import type { Intent } from './intent-analyzer.service';
 import { LLM_MODELS } from '../../config/llm.config';
+import { RESEARCH_LIMITS } from '../../config/research.config';
 
 export interface PerplexityResponse {
   synthesis: string; // Perplexity's AI-synthesized answer
@@ -113,7 +114,7 @@ Target length: ~1000 words (approximately 5000-7000 characters).`;
     const synthesis = response.choices[0].message.content || '';
 
     console.log(`[IntentSynthesizer] O1 synthesis: ${synthesis.length} chars (~${Math.round(synthesis.length / 6)} words)`);
-    console.log(`[IntentSynthesizer] Preview (first 300 chars):`, synthesis.slice(0, 300));
+    console.log(`[IntentSynthesizer] Preview (first ${RESEARCH_LIMITS.LOG_PREVIEW_LENGTH} chars):`, synthesis.slice(0, RESEARCH_LIMITS.LOG_PREVIEW_LENGTH));
 
     return {
       intentId: intent.id,

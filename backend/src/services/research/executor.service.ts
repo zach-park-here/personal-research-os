@@ -26,6 +26,7 @@ import {
   type PerplexityResponse
 } from './intent-synthesizer.service';
 import { LLM_MODELS } from '../../config/llm.config';
+import { RESEARCH_LIMITS } from '../../config/research.config';
 
 // Lazy initialize OpenAI (to ensure .env is loaded first)
 let openai: OpenAI | null = null;
@@ -409,7 +410,7 @@ async function synthesizeWithLLM(
 
   // Prepare search results summary for LLM
   const resultsSummary = results
-    .slice(0, 15) // Limit to top 15 to save tokens
+    .slice(0, RESEARCH_LIMITS.MAX_RESULTS_FOR_SYNTHESIS)
     .map((r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.snippet}`)
     .join('\n\n---\n\n');
 
