@@ -36,12 +36,12 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
             {/* Prospect Info */}
             <div className="flex-1">
               <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-[#ECECEC]">
-                Daniel Park
+                {personaAnalysis?.persona_name || 'Unknown'}
               </h1>
               <div className="flex items-center gap-4 text-base text-gray-600 dark:text-[#C5C7CA] mb-4">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
-                  <span>CEO at Pickle AI</span>
+                  <span>{personaAnalysis?.persona_title || 'Unknown Role'} at {personaAnalysis?.persona_company || 'Unknown Company'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />

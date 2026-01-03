@@ -71,6 +71,9 @@ Generate a JSON report with this EXACT structure:
     },
 
     "persona_analysis": {
+      "persona_name": "${prospectName}",
+      "persona_title": "${prospectTitle}",
+      "persona_company": "${prospectCompany}",
       "role_description": "What does a ${prospectTitle} actually do day-to-day?",
       "key_responsibilities": [
         "Primary responsibility 1",

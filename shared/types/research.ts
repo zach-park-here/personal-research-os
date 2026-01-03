@@ -90,6 +90,8 @@ export const MeetingPrepReportSchema = z.object({
   }).optional(),
   persona_analysis: z.object({
     persona_name: z.string().optional(),
+    persona_title: z.string().optional(),
+    persona_company: z.string().optional(),
     role_description: z.string().optional(),
     key_responsibilities: z.array(z.string()).optional(),
     decision_authority: z.string().optional(),
