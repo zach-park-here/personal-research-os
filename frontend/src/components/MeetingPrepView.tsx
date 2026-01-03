@@ -56,7 +56,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
       </div>
 
       {/* Intelligence Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-6 mb-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Company Intelligence */}
         <div className="bg-white dark:bg-[#2D2D2D] border border-gray-200 dark:border-[#3A3A3C] rounded-lg p-6">
           <div className="flex items-center gap-3 mb-6">
