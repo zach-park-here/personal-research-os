@@ -22,9 +22,9 @@ import { buildMeetingPrepPrompt } from './prompts/meeting-prep';
 import { analyzeIntentWithO1, type IntentAnalysis, type Intent } from './intent-analyzer.service';
 import {
   synthesizeIntentWithO1,
-  type IntentResult,
-  type PerplexityResponse
+  type IntentResult
 } from './intent-synthesizer.service';
+import type { PerplexityResponse } from '../search/web-search.client';
 import { LLM_MODELS } from '../../config/llm.config';
 import { RESEARCH_LIMITS } from '../../config/research.config';
 import { extractJSON, parseJSONSafe } from '../../utils/llm-response-parser';

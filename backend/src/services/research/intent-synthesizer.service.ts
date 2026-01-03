@@ -6,18 +6,10 @@
  */
 
 import type { Intent } from './intent-analyzer.service';
+import type { PerplexityResponse } from '../search/web-search.client';
 import { LLM_MODELS } from '../../config/llm.config';
 import { RESEARCH_LIMITS } from '../../config/research.config';
 import { getOpenAIClient } from '../llm/openai-client.factory';
-
-export interface PerplexityResponse {
-  synthesis: string; // Perplexity's AI-synthesized answer
-  citations: string[]; // URLs cited
-  searchResults?: Array<{
-    url: string;
-    snippet: string;
-  }>;
-}
 
 export interface IntentResult {
   intentId: string;
