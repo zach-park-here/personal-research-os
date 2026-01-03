@@ -2,6 +2,7 @@ import { Building2, User, ExternalLink, Calendar, Linkedin, FileText, Target, Al
 import type { ResearchResult } from '@personal-research-os/shared/types/research';
 import { createGoogleSearchUrl } from '../utils/urlHelpers';
 import { SectionHeader } from './ui/SectionHeader';
+import { EmptyState } from './ui/EmptyState';
 
 interface MeetingPrepViewProps {
   research: ResearchResult;
@@ -104,12 +105,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
           {/* Empty State for Company Intelligence */}
           {(!companyIntel?.recent_news || companyIntel.recent_news.length === 0) &&
            (!companyIntel?.product_launches || companyIntel.product_launches.length === 0) && (
-            <div className="flex items-center justify-center py-8 text-gray-400 dark:text-[#888888]">
-              <div className="text-center">
-                <AlertCircle className="w-10 h-10 mx-auto mb-2" />
-                <p className="text-sm">No company intelligence found</p>
-              </div>
-            </div>
+            <EmptyState message="No company intelligence found" />
           )}
         </div>
 
@@ -210,12 +206,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
           {(!personaAnalysis?.recent_activity?.linkedin_posts || personaAnalysis.recent_activity.linkedin_posts.length === 0) &&
            (!personaAnalysis?.recent_activity?.topics_of_interest || personaAnalysis.recent_activity.topics_of_interest.length === 0) &&
            !personaAnalysis?.recent_activity?.personal_insights && (
-            <div className="flex items-center justify-center py-8 text-gray-400 dark:text-[#888888]">
-              <div className="text-center">
-                <AlertCircle className="w-10 h-10 mx-auto mb-2" />
-                <p className="text-sm">No recent activity found</p>
-              </div>
-            </div>
+            <EmptyState message="No recent activity found" />
           )}
         </div>
 
@@ -281,12 +272,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
            (!meetingStrategy?.value_propositions || meetingStrategy.value_propositions.length === 0) &&
            (!meetingStrategy?.discovery_questions || meetingStrategy.discovery_questions.length === 0) &&
            (!meetingStrategy?.potential_challenges || meetingStrategy.potential_challenges.length === 0) && (
-            <div className="flex items-center justify-center py-8 text-gray-400 dark:text-[#888888]">
-              <div className="text-center">
-                <AlertCircle className="w-10 h-10 mx-auto mb-2" />
-                <p className="text-sm">No meeting strategy found</p>
-              </div>
-            </div>
+            <EmptyState message="No meeting strategy found" />
           )}
         </div>
 
