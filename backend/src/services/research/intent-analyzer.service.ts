@@ -5,10 +5,10 @@
  * This is the first step in the multi-turn progressive research architecture.
  */
 
-import OpenAI from 'openai';
 import { LLM_MODELS } from '../../config/llm.config';
 import { RESEARCH_LIMITS } from '../../config/research.config';
 import { extractJSON } from '../../utils/llm-response-parser';
+import { getOpenAIClient } from '../llm/openai-client.factory';
 
 export interface Intent {
   id: string;
@@ -34,9 +34,7 @@ export async function analyzeIntentWithO1(params: {
 }): Promise<IntentAnalysis> {
   const { companyName, companyDomain, userResearchPrompt, meetingDate } = params;
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  const openai = getOpenAIClient();
 
   console.log('[IntentAnalyzer] Analyzing intent with O1...');
   console.log(`[IntentAnalyzer] Company: ${companyName} (${companyDomain})`);

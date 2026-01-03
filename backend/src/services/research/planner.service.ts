@@ -5,7 +5,6 @@
  * Uses LLM to decompose the research goal into specific queries.
  */
 
-import OpenAI from 'openai';
 import type { Task, UserProfile } from '@personal-research-os/shared/types';
 import type { ResearchIntent, ResearchSubtask, TaskType } from '@personal-research-os/shared/types/research';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,25 +12,7 @@ import { getUserProfile } from '../../db/repositories/user-profile.repository';
 import type { MeetingContext } from './classifier.service';
 import { LLM_MODELS } from '../../config/llm.config';
 import { parseJSONSafe } from '../../utils/llm-response-parser';
-
-// Lazy initialize OpenAI (to ensure .env is loaded first)
-let openai: OpenAI | null = null;
-let openaiInitialized = false;
-
-function getOpenAI(): OpenAI | null {
-  if (!openaiInitialized) {
-    if (process.env.OPENAI_API_KEY) {
-      console.log('[Planner] OpenAI API key found, initializing client');
-      openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-    } else {
-      console.warn('[Planner] OPENAI_API_KEY not found in environment');
-    }
-    openaiInitialized = true;
-  }
-  return openai;
-}
+import { getOpenAIClient } from '../llm/openai-client.factory';
 
 /**
  * Plan web research for a task
@@ -44,10 +25,12 @@ export async function planWebResearch(
 ): Promise<ResearchSubtask[]> {
   console.log(`[Planner] Planning research for task: "${task.title}" (intent: ${intent}, type: ${taskType || 'general'})`);
 
-  // Use LLM if available, otherwise use rule-based fallback
-  const client = getOpenAI();
-  if (client) {
+  // Use LLM for planning
+  try {
+    const client = getOpenAIClient();
     return await planWithLLM(task, intent, client, taskType, meetingContext);
+  } catch (error) {
+    console.warn('[Planner] OpenAI not available, using rule-based fallback');
   }
 
   console.warn('[Planner] No LLM available, using rule-based planner');

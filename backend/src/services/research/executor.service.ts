@@ -28,25 +28,7 @@ import {
 import { LLM_MODELS } from '../../config/llm.config';
 import { RESEARCH_LIMITS } from '../../config/research.config';
 import { extractJSON, parseJSONSafe } from '../../utils/llm-response-parser';
-
-// Lazy initialize OpenAI (to ensure .env is loaded first)
-let openai: OpenAI | null = null;
-let openaiInitialized = false;
-
-function getOpenAI(): OpenAI | null {
-  if (!openaiInitialized) {
-    if (process.env.OPENAI_API_KEY) {
-      console.log('[Executor] OpenAI API key found, initializing client');
-      openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-    } else {
-      console.warn('[Executor] OPENAI_API_KEY not found in environment');
-    }
-    openaiInitialized = true;
-  }
-  return openai;
-}
+import { getOpenAIClient } from '../llm/openai-client.factory';
 
 export interface ExecutionResult {
   report: ResearchReport;
@@ -386,13 +368,8 @@ async function synthesizeReport(
 ): Promise<{ report: ResearchReport; recommended_pages: RecommendedPage[] }> {
   console.log(`[Executor] Synthesizing report from ${results.length} results (type: ${taskType || 'general'})`);
 
-  const client = getOpenAI();
-  if (client) {
-    return await synthesizeWithLLM(results, intent, userId, taskType, meetingContext, client);
-  }
-
-  console.warn('[Executor] No LLM available, using rule-based synthesis');
-  return synthesizeWithRules(results);
+  const client = getOpenAIClient();
+  return await synthesizeWithLLM(results, intent, userId, taskType, meetingContext, client);
 }
 
 /**
@@ -555,10 +532,7 @@ export async function executeIntentBasedResearch(
   const { prospectCompany, prospectEmail } = meetingContext;
   const companyDomain = extractDomain(prospectEmail || '');
 
-  const client = getOpenAI();
-  if (!client) {
-    throw new Error('OpenAI client not initialized - check OPENAI_API_KEY');
-  }
+  const client = getOpenAIClient();
 
   // Get Perplexity client (must be PerplexitySearchClient for enhanced search)
   const searchClient = getWebSearchClient();

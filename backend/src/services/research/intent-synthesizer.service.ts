@@ -5,10 +5,10 @@
  * a single comprehensive answer (500-1000 words) for each research intent.
  */
 
-import OpenAI from 'openai';
 import type { Intent } from './intent-analyzer.service';
 import { LLM_MODELS } from '../../config/llm.config';
 import { RESEARCH_LIMITS } from '../../config/research.config';
+import { getOpenAIClient } from '../llm/openai-client.factory';
 
 export interface PerplexityResponse {
   synthesis: string; // Perplexity's AI-synthesized answer
@@ -37,9 +37,7 @@ export async function synthesizeIntentWithO1(
   intent: Intent,
   queryResults: PerplexityResponse[]
 ): Promise<IntentResult> {
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  const openai = getOpenAIClient();
 
   console.log(`[IntentSynthesizer] Synthesizing intent: ${intent.id}`);
   console.log(`[IntentSynthesizer] Query results: ${queryResults.length}`);
