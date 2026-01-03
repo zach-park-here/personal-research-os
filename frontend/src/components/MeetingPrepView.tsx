@@ -1,8 +1,8 @@
 import { Building2, User, ExternalLink, Calendar, Linkedin, FileText, Target, AlertCircle } from 'lucide-react';
 import type { ResearchResult } from '@personal-research-os/shared/types/research';
-import { createGoogleSearchUrl } from '../utils/urlHelpers';
 import { SectionHeader } from './ui/SectionHeader';
 import { EmptyState } from './ui/EmptyState';
+import { ProductLaunchBadge } from './ProductLaunchBadge';
 
 interface MeetingPrepViewProps {
   research: ResearchResult;
@@ -71,15 +71,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
               </h3>
               <div className="flex flex-wrap gap-2">
                 {companyIntel.product_launches.map((product, idx) => (
-                  <a
-                    key={idx}
-                    href={createGoogleSearchUrl(product)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md text-sm font-medium hover:bg-gray-700 dark:hover:bg-gray-300 transition-colors cursor-pointer"
-                  >
-                    {product}
-                  </a>
+                  <ProductLaunchBadge key={idx} product={product} />
                 ))}
               </div>
             </div>
