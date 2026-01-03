@@ -1,6 +1,7 @@
 import { Building2, User, ExternalLink, Calendar, Linkedin, FileText, Target, AlertCircle } from 'lucide-react';
 import type { ResearchResult } from '@personal-research-os/shared/types/research';
 import { createGoogleSearchUrl } from '../utils/urlHelpers';
+import { SectionHeader } from './ui/SectionHeader';
 
 interface MeetingPrepViewProps {
   research: ResearchResult;
@@ -59,12 +60,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Company Intelligence */}
         <div className="bg-white dark:bg-[#2D2D2D] border border-gray-200 dark:border-[#3A3A3C] rounded-lg p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-md bg-gray-900 dark:bg-gray-100 flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-white dark:text-gray-900" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-[#ECECEC]">Company Intelligence</h2>
-          </div>
+          <SectionHeader icon={Building2} title="Company Intelligence" />
 
           {/* Product Launches */}
           {companyIntel?.product_launches && companyIntel.product_launches.length > 0 && (
@@ -119,12 +115,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
 
         {/* Persona Analysis - Recent Activity */}
         <div className="bg-white dark:bg-[#2D2D2D] border border-gray-200 dark:border-[#3A3A3C] rounded-lg p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-md bg-gray-900 dark:bg-gray-100 flex items-center justify-center">
-              <User className="w-4 h-4 text-white dark:text-gray-900" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-[#ECECEC]">Recent Activity</h2>
-          </div>
+          <SectionHeader icon={User} title="Recent Activity" />
 
           {/* LinkedIn Posts */}
           {personaAnalysis?.recent_activity?.linkedin_posts && personaAnalysis.recent_activity.linkedin_posts.length > 0 ? (
@@ -230,12 +221,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
 
         {/* Meeting Strategy */}
         <div className="bg-white dark:bg-[#2D2D2D] border border-gray-200 dark:border-[#3A3A3C] rounded-lg p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-md bg-gray-900 dark:bg-gray-100 flex items-center justify-center">
-              <Target className="w-4 h-4 text-white dark:text-gray-900" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-[#ECECEC]">Meeting Strategy</h2>
-          </div>
+          <SectionHeader icon={Target} title="Meeting Strategy" />
 
           {/* Opening Approach */}
           {meetingStrategy?.opening_approach && (
@@ -306,12 +292,7 @@ export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
 
         {/* Recommended Pages */}
         <div className="bg-white dark:bg-[#2D2D2D] border border-gray-200 dark:border-[#3A3A3C] rounded-lg p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-md bg-gray-900 dark:bg-gray-100 flex items-center justify-center">
-              <ExternalLink className="w-4 h-4 text-white dark:text-gray-900" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-[#ECECEC]">Key Resources</h2>
-          </div>
+          <SectionHeader icon={ExternalLink} title="Key Resources" />
 
           <div className="space-y-3">
             {research.recommended_pages?.slice(0, 4).map((page, idx) => (
