@@ -9,22 +9,12 @@ interface MeetingPrepViewProps {
 export default function MeetingPrepView({ research }: MeetingPrepViewProps) {
   const { report } = research;
 
-  // DEBUG: Log report structure
-  console.log('[MeetingPrepView] 🔍 DEBUG:');
-  console.log('  report keys:', Object.keys(report));
-  console.log('  has persona_analysis:', 'persona_analysis' in report);
-  console.log('  has company_intelligence:', 'company_intelligence' in report);
-  console.log('  full report:', report);
-
   // Type guard to check if report has meeting prep structure
   const isMeetingPrep = 'persona_analysis' in report && 'company_intelligence' in report;
 
   if (!isMeetingPrep) {
-    console.log('[MeetingPrepView] ❌ Not meeting prep format - showing fallback');
     return <div className="p-6 text-center text-gray-500 dark:text-gray-400">This is not a meeting prep report.</div>;
   }
-
-  console.log('[MeetingPrepView] ✅ Meeting prep format detected - rendering full view');
 
   const personaAnalysis = report.persona_analysis;
   const companyIntel = report.company_intelligence;
