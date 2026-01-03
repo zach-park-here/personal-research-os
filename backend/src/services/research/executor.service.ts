@@ -585,57 +585,12 @@ export async function executeIntentBasedResearch(
     });
   }
 
-  // ============ STAGE 2: Industry Context & Pain Points ============
-  // TEMPORARILY DISABLED FOR TESTING - TESTING STAGE 1 ONLY
-  console.log(`[IntentBasedResearch] ⏭️  STAGE 2: SKIPPED FOR TESTING`);
-
-  // // Build context from Stage 1 results
-  // const stage1Context = allIntentResults
-  //   .map(r => `${r.description}: ${r.synthesis.slice(0, 300)}...`)
-  //   .join('\n\n');
-
-  // const stage2Prompt = `Based on what we know about ${prospectCompany}, research:
-  // 1. Industry trends affecting their space (last 2-3 months)
-  // 2. Competitive pressures or market shifts
-  // 3. Common challenges for companies like this`;
-
-  // const stage2IntentAnalysis = await analyzeIntentWithO1({
-  //   companyName: prospectCompany || '',
-  //   companyDomain: companyDomain,
-  //   userResearchPrompt: `CONTEXT FROM STAGE 1:\n${stage1Context}\n\n${stage2Prompt}`,
-  //   meetingDate: new Date().toISOString().split('T')[0],
-  // });
-
-  // console.log(`[IntentBasedResearch] Stage 2: ${stage2IntentAnalysis.intents.length} intents identified`);
-
-  // // Process each Stage 2 intent
-  // for (const intent of stage2IntentAnalysis.intents) {
-  //   console.log(`[IntentBasedResearch]   Processing intent: ${intent.id}`);
-
-  //   const queryResults: PerplexityResponse[] = await Promise.all(
-  //     intent.queries.map(query => searchClient.searchWebEnhanced(query, 5))
-  //   );
-
-  //   console.log(`[IntentBasedResearch]   Got ${queryResults.length} Perplexity syntheses for ${intent.id}`);
-
-  //   const intentResult = await synthesizeIntentWithO1(intent, queryResults);
-  //   allIntentResults.push(intentResult);
-
-  //   subtaskResults.push({
-  //     subtask_id: intent.id,
-  //     subtask_title: intent.description,
-  //     query: intent.queries.join(' | '),
-  //     sources: [], // URLs are tracked in intentResult.urlCount
-  //   });
-  // }
-
   // ============ FINAL STAGE: O1 Synthesis ============
   console.log(`[IntentBasedResearch] 📍 FINAL STAGE: Synthesizing all intents into meeting brief`);
 
   const allIntentsSummary = allIntentResults
     .map((result, idx) => {
-      const stageNum = idx < stage1IntentAnalysis.intents.length ? 1 : 2;
-      return `### Intent ${idx + 1} (Stage ${stageNum}): ${result.description}
+      return `### Intent ${idx + 1}: ${result.description}
 
 ${result.synthesis}
 
