@@ -27,6 +27,7 @@ import {
 } from './intent-synthesizer.service';
 import { LLM_MODELS } from '../../config/llm.config';
 import { RESEARCH_LIMITS } from '../../config/research.config';
+import { extractJSON, parseJSONSafe } from '../../utils/llm-response-parser';
 
 // Lazy initialize OpenAI (to ensure .env is loaded first)
 let openai: OpenAI | null = null;
@@ -691,12 +692,7 @@ ${result.synthesis}
   console.log(`[IntentBasedResearch] Final synthesis: ${finalContent.length} characters`);
 
   // Parse JSON response
-  const jsonMatch = finalContent.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('O1 final synthesis did not return valid JSON');
-  }
-
-  const parsedResult = JSON.parse(jsonMatch[0]);
+  const parsedResult = extractJSON<any>(finalContent, 'O1 final synthesis');
 
   // Calculate total sources
   const totalUrls = allIntentResults.reduce((sum, r) => sum + r.urlCount, 0);

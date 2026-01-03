@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getUserProfile } from '../../db/repositories/user-profile.repository';
 import type { MeetingContext } from './classifier.service';
 import { LLM_MODELS } from '../../config/llm.config';
+import { parseJSONSafe } from '../../utils/llm-response-parser';
 
 // Lazy initialize OpenAI (to ensure .env is loaded first)
 let openai: OpenAI | null = null;
@@ -152,7 +153,7 @@ IMPORTANT: For LinkedIn queries, include both name AND company to verify correct
       });
 
       const content = completion.choices[0].message.content || '{}';
-      const parsed = JSON.parse(content);
+      const parsed = parseJSONSafe(content, {});
       const queries = parsed.queries || parsed;
 
       if (!Array.isArray(queries)) {
@@ -211,7 +212,7 @@ Tailor the queries to be most relevant for the user's context and needs.`;
     });
 
     const content = completion.choices[0].message.content || '{}';
-    const parsed = JSON.parse(content);
+    const parsed = parseJSONSafe(content, {});
 
     // Handle both {queries: [...]} and [...] formats
     const queries = parsed.queries || parsed;
