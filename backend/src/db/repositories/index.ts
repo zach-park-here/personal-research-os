@@ -36,9 +36,5 @@ export function getRepositories() {
     calendarEvents: new CalendarEventRepository(db),
     calendarWebhooks: new CalendarWebhookRepository(db),
     oauthTokens: new OAuthTokenRepository(db),
-    // Add more repositories as needed:
-    // projects: new ProjectRepository(db),
-    // browsingProfile: new BrowsingProfileRepository(db),
-    // etc.
   };
 }
