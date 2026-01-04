@@ -13,6 +13,9 @@ import { SearchFlowRepository } from './search-flow.repository';
 import { ResearchPlanRepository } from './research-plan.repository';
 import { ResearchResultRepository } from './research-result.repository';
 import { UserProfileRepository } from './user-profile.repository';
+import { CalendarEventRepository } from './calendar-event.repository';
+import { CalendarWebhookRepository } from './calendar-webhook.repository';
+import { OAuthTokenRepository } from './oauth-token.repository';
 
 /**
  * Get repository instances
@@ -30,10 +33,8 @@ export function getRepositories() {
     researchPlans: new ResearchPlanRepository(db),
     researchResults: new ResearchResultRepository(db),
     userProfiles: new UserProfileRepository(db),
-    // Add more repositories as needed:
-    // projects: new ProjectRepository(db),
-    // calendarEvents: new CalendarEventRepository(db),
-    // browsingProfile: new BrowsingProfileRepository(db),
-    // etc.
+    calendarEvents: new CalendarEventRepository(db),
+    calendarWebhooks: new CalendarWebhookRepository(db),
+    oauthTokens: new OAuthTokenRepository(db),
   };
 }

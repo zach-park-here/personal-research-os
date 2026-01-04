@@ -5,9 +5,18 @@ import path from 'path';
 import { setupRoutes } from './api/routes';
 import { initDatabase } from './db/init';
 import { startOrchestrator } from './orchestrator';
+import { startCalendarScheduler } from './services/calendar/calendar-sync-scheduler.service';
 
 // Load .env from backend directory
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+const envPath = path.join(__dirname, '..', '.env');
+console.log('[ENV] Loading from:', envPath);
+const result = dotenv.config({ path: envPath });
+if (result.error) {
+  console.error('[ENV] Failed to load .env:', result.error);
+  // Fallback: try loading from project root
+  dotenv.config();
+}
+console.log('[ENV] GOOGLE_CLIENT_ID loaded:', !!process.env.GOOGLE_CLIENT_ID);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +43,10 @@ async function start() {
     // Start orchestrator (triggers, queue management)
     await startOrchestrator();
     console.log('✓ Orchestrator started');
+
+    // Start calendar scheduler (webhook renewal, periodic sync, meeting prep)
+    startCalendarScheduler();
+    console.log('✓ Calendar scheduler started');
 
     // Start server
     app.listen(PORT, () => {
