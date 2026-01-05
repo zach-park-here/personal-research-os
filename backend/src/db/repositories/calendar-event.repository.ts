@@ -130,10 +130,10 @@ export class CalendarEventRepository extends BaseRepository {
       .order('start_time', { ascending: true });
 
     if (error) {
-      throw new Error(`Failed to fetch meetings for prep: ${error.message}`);
+      this.handleError(error, 'CalendarEventRepository.getUpcomingMeetingsForPrep');
     }
 
-    return (data || []).map(this.mapToCalendarEvent);
+    return (data as CalendarEvent[]) || [];
   }
 
   /**

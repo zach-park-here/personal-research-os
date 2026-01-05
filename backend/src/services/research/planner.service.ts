@@ -5,10 +5,11 @@
  * Uses LLM to decompose the research goal into specific queries.
  */
 
+import OpenAI from 'openai';
 import type { Task, UserProfile } from '@personal-research-os/shared/types';
 import type { ResearchIntent, ResearchSubtask, TaskType } from '@personal-research-os/shared/types/research';
 import { v4 as uuidv4 } from 'uuid';
-import { getUserProfile } from '../../db/repositories/user-profile.repository';
+import { getRepositories } from '../../db/repositories';
 import type { MeetingContext } from './classifier.service';
 import { LLM_MODELS } from '../../config/llm.config';
 import { parseJSONSafe } from '../../utils/llm-response-parser';
@@ -58,7 +59,8 @@ async function planWithLLM(
   // Get user profile for context
   let userProfile: UserProfile | null = null;
   try {
-    userProfile = await getUserProfile(task.userId);
+    const repos = getRepositories();
+    userProfile = await repos.userProfiles.getByUserId(task.userId);
   } catch (error) {
     console.warn('[Planner] Could not load user profile, proceeding without user context');
   }
@@ -136,8 +138,8 @@ IMPORTANT: For LinkedIn queries, include both name AND company to verify correct
       });
 
       const content = completion.choices[0].message.content || '{}';
-      const parsed = parseJSONSafe(content, {});
-      const queries = parsed.queries || parsed;
+      const parsed = parseJSONSafe<any>(content, {});
+      const queries = (parsed.queries || parsed) as any[];
 
       if (!Array.isArray(queries)) {
         throw new Error('LLM returned invalid format');
@@ -195,10 +197,10 @@ Tailor the queries to be most relevant for the user's context and needs.`;
     });
 
     const content = completion.choices[0].message.content || '{}';
-    const parsed = parseJSONSafe(content, {});
+    const parsed = parseJSONSafe<any>(content, {});
 
     // Handle both {queries: [...]} and [...] formats
-    const queries = parsed.queries || parsed;
+    const queries = (parsed.queries || parsed) as any[];
 
     if (!Array.isArray(queries)) {
       throw new Error('LLM returned invalid format');
