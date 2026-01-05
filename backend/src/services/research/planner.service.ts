@@ -94,10 +94,10 @@ async function planWithLLM(
 
   // Meeting prep: specialized prompt
   if (taskType === 'meeting_prep') {
-    // DEMO MODE: Default to Sam Altman if no context provided
-    const prospectName = meetingContext?.prospectName || 'Sam Altman';
-    const prospectCompany = meetingContext?.prospectCompany || 'OpenAI';
-    const prospectTitle = meetingContext?.prospectTitle || 'CEO';
+    // Use actual meeting context from task (extracted from calendar)
+    const prospectName = meetingContext?.prospectName || 'the prospect';
+    const prospectCompany = meetingContext?.prospectCompany || 'their company';
+    const prospectTitle = meetingContext?.prospectTitle || 'their role';
 
     const prompt = `You are a B2B sales research planner. Generate 4-5 web search queries to prepare for an upcoming meeting.
 ${userContext}
@@ -230,11 +230,11 @@ function planWithRules(
 ): ResearchSubtask[] {
   // Meeting prep: specialized rule-based queries
   if (taskType === 'meeting_prep') {
-    // DEMO MODE: Default to Sam Altman
+    // Use actual meeting context from task (extracted from calendar)
     const fallbackContext: MeetingContext = {
-      prospectName: meetingContext?.prospectName || 'Sam Altman',
-      prospectCompany: meetingContext?.prospectCompany || 'OpenAI',
-      prospectTitle: meetingContext?.prospectTitle || 'CEO',
+      prospectName: meetingContext?.prospectName || 'the prospect',
+      prospectCompany: meetingContext?.prospectCompany || 'their company',
+      prospectTitle: meetingContext?.prospectTitle || 'their role',
     };
     return planMeetingPrepWithRules(fallbackContext);
   }

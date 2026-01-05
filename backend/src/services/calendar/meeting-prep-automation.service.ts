@@ -8,6 +8,7 @@
 import { getRepositories } from '../../db/repositories';
 import { CalendarEvent } from '../../types/calendar.types';
 import type { Task } from '@personal-research-os/shared/types';
+import { requestResearchForTask } from '../research/orchestrator.service';
 
 interface ProspectInfo {
   prospectName: string;
@@ -273,8 +274,18 @@ export class MeetingPrepAutomationService {
       `[MeetingPrep] Task created: ${task.id} for meeting: ${meeting.event_id}`
     );
 
-    // NOTE: Task creation with "meeting" keyword auto-triggers research pipeline
-    // No need to manually trigger research here - it happens via existing task webhook/observer
+    // Trigger research in background (fire-and-forget)
+    // Task creation completes immediately, research happens asynchronously
+    setImmediate(async () => {
+      try {
+        console.log(`[MeetingPrep] Starting research for task: ${task.id}`);
+        await requestResearchForTask(task.id);
+        console.log(`[MeetingPrep] Research triggered successfully for task: ${task.id}`);
+      } catch (error: any) {
+        // Research failure doesn't affect task creation (already completed)
+        console.error(`[MeetingPrep] Research failed for task ${task.id}:`, error.message);
+      }
+    });
 
     return task;
   }

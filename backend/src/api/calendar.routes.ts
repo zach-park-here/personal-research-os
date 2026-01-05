@@ -189,6 +189,93 @@ router.get('/events', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/calendar/meeting-prep
+ *
+ * Get upcoming meetings with prep tasks and research status
+ * Query params: userId, days (default: 2)
+ * Returns: { meetings: MeetingPrepItem[] }
+ */
+router.get('/meeting-prep', async (req: Request, res: Response) => {
+  try {
+    const userId = req.query.userId as string;
+    const days = parseInt(req.query.days as string) || 2;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const repos = getRepositories();
+
+    // 1. Get upcoming meetings (today/tomorrow)
+    const meetings = await repos.calendarEvents.getUpcomingMeetingsForPrep(userId, days);
+
+    // 2. For each meeting, get prep task (if exists)
+    const meetingsWithPrep = await Promise.all(
+      meetings.map(async (meeting) => {
+        let prepTask = null;
+        let research = null;
+
+        // Get prep task if created
+        if (meeting.prep_task_created && meeting.prep_task_id) {
+          try {
+            prepTask = await repos.tasks.findById(meeting.prep_task_id);
+
+            // Get research status and results if task exists
+            if (prepTask) {
+              const researchTracking = await repos.researchTasks.getByTaskId(prepTask.id);
+              const researchResult = await repos.researchResults.getByTaskId(prepTask.id);
+
+              research = {
+                status: researchTracking?.researchStatus || 'not_started',
+                result: researchResult ? {
+                  report: researchResult.report,
+                  recommended_pages: researchResult.recommended_pages,
+                  created_at: researchResult.createdAt,
+                } : null,
+              };
+            }
+          } catch (error: any) {
+            console.warn(`[MeetingPrep API] Failed to load task/research for meeting ${meeting.id}:`, error.message);
+          }
+        }
+
+        return {
+          // Meeting info
+          id: meeting.id,
+          summary: meeting.summary,
+          start_time: meeting.start_time,
+          end_time: meeting.end_time,
+          location: meeting.location,
+          hangout_link: meeting.hangout_link,
+          attendees: meeting.attendees,
+          organizer: meeting.organizer,
+          conference_data: meeting.conference_data,
+          status: meeting.status,
+
+          // Prep task info
+          prep_task: prepTask ? {
+            id: prepTask.id,
+            title: prepTask.title,
+            description: prepTask.description,
+            due_date: prepTask.dueDate,
+            status: prepTask.status,
+            priority: prepTask.priority,
+          } : null,
+
+          // Research info
+          research,
+        };
+      })
+    );
+
+    res.json({ meetings: meetingsWithPrep });
+  } catch (error: any) {
+    console.error('[CalendarRoutes] Failed to fetch meeting prep:', error.message);
+    res.status(500).json({ error: 'Failed to fetch meeting prep data' });
+  }
+});
+
+/**
  * GET /api/calendar/status
  *
  * Check calendar connection status
