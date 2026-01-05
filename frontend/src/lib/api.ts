@@ -338,4 +338,21 @@ export const api = {
       return res.json();
     },
   },
+
+  calendar: {
+    /**
+     * Get upcoming meetings with prep tasks and research status
+     */
+    async getMeetingPrep(userId: string, days: number = 2) {
+      const res = await fetch(
+        `${API_BASE}/calendar/meeting-prep?userId=${userId}&days=${days}`
+      );
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch meeting prep data');
+      }
+
+      return res.json();
+    },
+  },
 };

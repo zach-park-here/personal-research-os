@@ -1,29 +1,41 @@
 import { useState } from 'react';
-import { Menu, Moon, Sun, X } from 'lucide-react';
+import { Menu, Moon, Sun, X, Calendar, Loader2, Plus } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import TaskList from '../components/TaskList';
 import TaskDetailModal from '../components/TaskDetailModal';
 import MeetingPrepView from '../components/MeetingPrepView';
+import { MeetingList } from '../components/MeetingList';
 import { useTasks } from '../hooks/useTasks';
 import { useResearch } from '../hooks/useResearch';
+import { useMeetings } from '../hooks/useMeetings';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import { Task } from '../types';
-import { api } from '../lib/api';
+import type { Meeting } from '../types';
 
 function Dashboard() {
-  const { tasks, allTasks, addTask, selectedTask, setSelectedTask, updateTask, deleteTask } = useTasks();
+  const { tasks, allTasks, addTask, selectedTask, setSelectedTask, deleteTask } = useTasks();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const [showTaskInput, setShowTaskInput] = useState(false);
   const [taskInputValue, setTaskInputValue] = useState('');
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
-  // Fetch research results for selected task
-  const { researchResult } = useResearch(selectedTask?.id || '');
+  // Fetch meetings data
+  const {
+    meetings,
+    loading: meetingsLoading,
+    error: meetingsError,
+  } = useMeetings('demo-user');
+
+  // Fetch research results for selected task or meeting
+  const taskIdForResearch = selectedTask?.id || selectedMeeting?.prep_task?.id || '';
+  const { researchResult } = useResearch(taskIdForResearch);
 
   // Check if selected task is meeting prep (use taskType from backend classification)
-  const isMeetingPrep = selectedTask?.researchStatus === 'completed' &&
-    selectedTask?.taskType === 'meeting_prep';
+  // OR if selectedMeeting has completed research
+  const isMeetingPrep =
+    (selectedTask?.researchStatus === 'completed' && selectedTask?.taskType === 'meeting_prep') ||
+    (selectedMeeting?.research?.status === 'completed');
 
   // Check if research is still in progress
   const isResearchInProgress = selectedTask?.isResearchEligible &&
@@ -141,29 +153,8 @@ function Dashboard() {
         {/* Task List */}
         <div className="flex-1 overflow-y-auto scrollbar-thin w-full max-w-[800px]">
           <div className="py-4 px-10">
-            {/* Upcoming Meeting Section */}
-            {tasks.filter(t => t.taskType === 'meeting_prep').length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center gap-2 px-2 py-1.5">
-                  <h2 className="text-sm font-semibold text-[#202020] dark:text-[#ECECEC]">
-                    Upcoming Meeting
-                  </h2>
-                  <span className="text-xs text-[#888888] dark:text-[#C5C7CA] ml-1">
-                    {tasks.filter(t => t.taskType === 'meeting_prep').length}
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <TaskList
-                    tasks={tasks.filter(t => t.taskType === 'meeting_prep')}
-                    selectedTaskId={selectedTask?.id}
-                    onSelectTask={setSelectedTask}
-                    onDeleteTask={deleteTask}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* Regular tasks - simple list without section header */}
+            {/* Note: meeting_prep tasks are NOT shown here - they only appear in the Meetings section below */}
             <div>
               <TaskList
                 tasks={tasks.filter(t => t.taskType !== 'meeting_prep')}
@@ -202,11 +193,35 @@ function Dashboard() {
                   className="flex items-start gap-2.5 px-2 py-2 group cursor-pointer rounded hover:bg-[#F9F9F9] dark:hover:bg-[#2D2D2D] transition-colors"
                   onClick={() => setShowTaskInput(true)}
                 >
-                  <div className="w-[18px] h-[18px] rounded-full border-2 border-[#D1D1D1] dark:border-[#3A3A3C] flex-shrink-0 mt-0.5 group-hover:border-[#808080] dark:group-hover:border-[#10A37F] transition-colors" />
+                  <Plus className="w-[18px] h-[18px] text-[#D1D1D1] dark:text-[#3A3A3C] flex-shrink-0 mt-0.5 group-hover:text-[#808080] dark:group-hover:text-[#10A37F] transition-colors" />
                   <div className="flex-1 text-sm text-[#888888] dark:text-[#C5C7CA]">
                     Add task
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="mt-8 mb-8 border-t border-gray-200 dark:border-gray-700" />
+
+            {/* Meetings Section */}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Meetings
+              </h2>
+
+              {meetingsLoading ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                </div>
+              ) : meetingsError ? (
+                <div className="text-red-500 text-sm">{meetingsError}</div>
+              ) : (
+                <MeetingList
+                  meetings={meetings}
+                  onMeetingClick={(meeting) => setSelectedMeeting(meeting)}
+                />
               )}
             </div>
           </div>
@@ -214,17 +229,23 @@ function Dashboard() {
       </div>
 
       {/* Meeting Prep Modal View - Only show when completed */}
-      {selectedTask && isMeetingPrep && researchResult && !isResearchInProgress && (
+      {(selectedTask || selectedMeeting) && isMeetingPrep && researchResult && !isResearchInProgress && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={() => setSelectedTask(null)}
+          onClick={() => {
+            setSelectedTask(null);
+            setSelectedMeeting(null);
+          }}
         >
           <div
             className="relative w-[90vw] max-w-[1400px] h-[90vh] overflow-y-auto bg-white dark:bg-[#1E1E1E] rounded-xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setSelectedTask(null)}
+              onClick={() => {
+                setSelectedTask(null);
+                setSelectedMeeting(null);
+              }}
               className="sticky top-4 right-4 float-right z-10 p-2 bg-gray-100 dark:bg-[#2D2D2D] hover:bg-gray-200 dark:hover:bg-[#3A3A3C] rounded-full transition-colors"
             >
               <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
@@ -238,7 +259,10 @@ function Dashboard() {
       {selectedTask && !isMeetingPrep && !isResearchInProgress && (
         <TaskDetailModal
           task={selectedTask}
-          onClose={() => setSelectedTask(null)}
+          onClose={() => {
+            setSelectedTask(null);
+            setSelectedMeeting(null);
+          }}
         />
       )}
     </div>
