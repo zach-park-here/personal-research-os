@@ -13,6 +13,7 @@ export interface CalendarEvent {
   user_id: string;
   calendar_id: string;
   event_id: string;
+  title: string;
   summary: string;
   description: string | null;
   start_time: Date;
@@ -212,6 +213,7 @@ export interface CreateCalendarEventInput {
   user_id: string;
   calendar_id: string;
   event_id: string;
+  title: string;
   summary: string;
   description?: string;
   start_time: Date;
@@ -227,6 +229,7 @@ export interface CreateCalendarEventInput {
 }
 
 export interface UpdateCalendarEventInput {
+  title?: string;
   summary?: string;
   description?: string;
   start_time?: Date;

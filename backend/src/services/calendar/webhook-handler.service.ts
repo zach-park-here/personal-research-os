@@ -74,7 +74,7 @@ export class WebhookHandlerService {
         channel_id: channelId,
         resource_id: resourceId,
         expiration,
-        sync_token: null,
+        sync_token: undefined,
       });
 
       return channelId;

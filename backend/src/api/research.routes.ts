@@ -7,7 +7,6 @@ import { requestResearchForTask, getResearchResults } from '../services/research
 import { planWebResearch } from '../services/research/planner.service';
 import { classifyTaskType, extractMeetingContext } from '../services/research/classifier.service';
 import { getRepositories } from '../db/repositories';
-import { getTaskById } from '../db/repositories/task.repository';
 
 export const researchRouter = Router();
 
@@ -70,9 +69,11 @@ researchRouter.post('/plan', async (req, res) => {
       userId,
       title,
       description: description || '',
-      status: 'pending' as const,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      status: 'active' as const,
+      priority: 'medium' as const,
+      tags: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     // Get user profile for context

@@ -290,12 +290,14 @@ export class GoogleCalendarService {
   ): CreateCalendarEventInput {
     // Detect if this is a meeting
     const isMeeting = this.isMeetingEvent(event);
+    const eventTitle = event.summary || 'Untitled Event';
 
     return {
       user_id: userId,
       calendar_id: 'primary',
       event_id: event.id,
-      summary: event.summary || 'Untitled Event',
+      title: eventTitle,
+      summary: eventTitle,
       description: event.description,
       start_time: new Date(event.start.dateTime!),
       end_time: new Date(event.end.dateTime!),

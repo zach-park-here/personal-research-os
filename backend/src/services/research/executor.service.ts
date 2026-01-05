@@ -135,7 +135,7 @@ async function executeMultiStepMeetingPrepSearch(
   meetingContext: MeetingContext
 ): Promise<ExecutionResult> {
   const { prospectName, prospectTitle, prospectCompany, prospectEmail } = meetingContext;
-  const companyDomain = extractDomain(prospectEmail);
+  const companyDomain = prospectEmail ? extractDomain(prospectEmail) : '';
 
   console.log(`[MultiStep] 🎯 Starting multi-step search for ${prospectName} at ${prospectCompany}`);
 
