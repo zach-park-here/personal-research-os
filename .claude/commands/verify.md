@@ -1,3 +1,8 @@
+---
+command: verify
+description: Verify current work in the monorepo
+---
+
 Verify the current work in this monorepo.
 
 Rules:
@@ -9,3 +14,7 @@ Output:
 - Commands run + pass/fail
 - If something fails: fix, then re-run until passing (unless blocked)
 - Final summary of what is now verified
+
+Constraints:
+- Do not propose new features or refactors unrelated to verification.
+- Focus only on making the current state pass.

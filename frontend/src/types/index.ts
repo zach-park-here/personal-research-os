@@ -76,3 +76,49 @@ export interface ResearchStep {
   label: string;
   status: 'completed' | 'in_progress' | 'pending';
 }
+
+// Calendar / Meeting Prep Types
+export interface Attendee {
+  email: string;
+  displayName?: string;
+  responseStatus?: 'needsAction' | 'declined' | 'tentative' | 'accepted';
+}
+
+export interface Organizer {
+  email: string;
+  displayName?: string;
+}
+
+export interface Meeting {
+  id: string;
+  summary: string;
+  start_time: string;
+  end_time: string;
+  location: string | null;
+  hangout_link: string | null;
+  attendees: Attendee[];
+  organizer: Organizer | null;
+  status: 'confirmed' | 'tentative' | 'cancelled';
+
+  prep_task: {
+    id: string;
+    title: string;
+    description: string;
+    due_date: string;
+    status: 'active' | 'completed';
+    priority: 'low' | 'medium' | 'high';
+  } | null;
+
+  research: {
+    status: 'not_started' | 'classifying' | 'planning' | 'executing' | 'completed' | 'failed';
+    result: {
+      report: any;
+      recommended_pages: any[];
+      created_at: string;
+    } | null;
+  } | null;
+}
+
+export interface MeetingPrepResponse {
+  meetings: Meeting[];
+}
