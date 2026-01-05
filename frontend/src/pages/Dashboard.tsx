@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, Moon, Sun, X, Calendar, Loader2 } from 'lucide-react';
+import { Menu, Moon, Sun, X, Calendar, Loader2, Plus } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import TaskList from '../components/TaskList';
 import TaskDetailModal from '../components/TaskDetailModal';
@@ -153,29 +153,8 @@ function Dashboard() {
         {/* Task List */}
         <div className="flex-1 overflow-y-auto scrollbar-thin w-full max-w-[800px]">
           <div className="py-4 px-10">
-            {/* Upcoming Meeting Section */}
-            {tasks.filter(t => t.taskType === 'meeting_prep').length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center gap-2 px-2 py-1.5">
-                  <h2 className="text-sm font-semibold text-[#202020] dark:text-[#ECECEC]">
-                    Upcoming Meeting
-                  </h2>
-                  <span className="text-xs text-[#888888] dark:text-[#C5C7CA] ml-1">
-                    {tasks.filter(t => t.taskType === 'meeting_prep').length}
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <TaskList
-                    tasks={tasks.filter(t => t.taskType === 'meeting_prep')}
-                    selectedTaskId={selectedTask?.id}
-                    onSelectTask={setSelectedTask}
-                    onDeleteTask={deleteTask}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* Regular tasks - simple list without section header */}
+            {/* Note: meeting_prep tasks are NOT shown here - they only appear in the Meetings section below */}
             <div>
               <TaskList
                 tasks={tasks.filter(t => t.taskType !== 'meeting_prep')}
@@ -214,7 +193,7 @@ function Dashboard() {
                   className="flex items-start gap-2.5 px-2 py-2 group cursor-pointer rounded hover:bg-[#F9F9F9] dark:hover:bg-[#2D2D2D] transition-colors"
                   onClick={() => setShowTaskInput(true)}
                 >
-                  <div className="w-[18px] h-[18px] rounded-full border-2 border-[#D1D1D1] dark:border-[#3A3A3C] flex-shrink-0 mt-0.5 group-hover:border-[#808080] dark:group-hover:border-[#10A37F] transition-colors" />
+                  <Plus className="w-[18px] h-[18px] text-[#D1D1D1] dark:text-[#3A3A3C] flex-shrink-0 mt-0.5 group-hover:text-[#808080] dark:group-hover:text-[#10A37F] transition-colors" />
                   <div className="flex-1 text-sm text-[#888888] dark:text-[#C5C7CA]">
                     Add task
                   </div>
