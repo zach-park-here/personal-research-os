@@ -109,8 +109,35 @@ export class CalendarEventRepository extends BaseRepository {
   }
 
   /**
-   * Get meetings that need prep tasks created
-   * Filters for meetings:
+   * Get upcoming meetings for prep (today and tomorrow by default)
+   * Used by Meeting Prep API to show meetings with research status
+   */
+  async getUpcomingMeetingsForPrep(
+    userId: string,
+    daysAhead: number = 2
+  ): Promise<CalendarEvent[]> {
+    const now = new Date();
+    const futureDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+
+    const { data, error } = await this.db
+      .from('calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_meeting', true)
+      .neq('status', 'cancelled')
+      .gte('start_time', now.toISOString())
+      .lte('start_time', futureDate.toISOString())
+      .order('start_time', { ascending: true });
+
+    if (error) {
+      this.handleError(error, 'CalendarEventRepository.getUpcomingMeetingsForPrep');
+    }
+
+    return (data as CalendarEvent[]) || [];
+  }
+
+  /**
+   * Get meetings needing prep
    * - is_meeting = true
    * - prep_task_created = false
    * - start_time in specified hour range (12-48 hours by default)
